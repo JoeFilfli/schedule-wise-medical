@@ -19,6 +19,8 @@ interface Slot {
   appointment: {
     id: string
     status: string
+    type: string | null
+    notes: string | null
     patient: {
       firstName: string
       lastName: string
@@ -207,6 +209,11 @@ export default function CalendarPage() {
                   <>
                     <p><strong>Status:</strong> Booked</p>
                     <p><strong>Patient:</strong> {activeSlot.appointment.patient.firstName} {activeSlot.appointment.patient.lastName}</p>
+                    
+                    <p><strong>Type:</strong> {activeSlot.appointment.type === 'new' ? 'New Problem' : 'Follow-Up'}</p>
+                    <p><strong>Patient Note:</strong> {activeSlot.appointment.notes}</p>
+                    
+
                     <button onClick={() => deleteSlot(activeSlot.id)} className="btn btn-danger">
                       Cancel Slot & Notify Patient
                     </button>

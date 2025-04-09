@@ -8,9 +8,7 @@ import { useMemo } from 'react';
 const navs = {
   DOCTOR: [
     { href: '/doctor/dashboard', label: 'Dashboard' },
-    { href: '/doctor/appointments', label: 'Appointments' },
     { href: '/doctor/calendar', label: 'Calendar' },
-
     { href: '/doctor/patients', label: 'Patients' },
     { href: '/doctor/profile', label: 'Profile' },
     { href: '/doctor/reviews', label: 'Reviews' },

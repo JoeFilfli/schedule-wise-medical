@@ -21,28 +21,28 @@ enum AppointmentStatus {
 }
 
 model User {
-  id        String  @id @default(cuid())
-  email     String  @unique
+  id        String   @id @default(cuid())
+  email     String   @unique
   password  String
   role      Role
   firstName String
   lastName  String
-  verified  Boolean @default(false)
+  verified  Boolean  @default(false)
 
-  // Profiles
-  doctorProfile  DoctorProfile?
-  patientProfile PatientProfile?
+  phoneNumber     String?
+  profilePicture  Bytes?
 
-  // Slots (Doctor creates)
-  doctorSlots Slot[] @relation("DoctorSlots")
+  doctorProfile   DoctorProfile?
+  patientProfile  PatientProfile?
 
-  // Appointments
+  doctorSlots     Slot[]        @relation("DoctorSlots")
   doctorAppointments  Appointment[] @relation("DoctorAppointments")
   patientAppointments Appointment[] @relation("PatientAppointments")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
 
 model DoctorProfile {
   id          String  @id @default(cuid())
@@ -87,7 +87,8 @@ model Appointment {
 
   status AppointmentStatus @default(SCHEDULED)
   reason String?
-  notes  String?
+  notes  String?           // ← Patient message
+  type   String?           // ← "new" or "follow-up"
 
   // denormalized snapshot
   doctorName     String?
@@ -101,6 +102,5 @@ model Appointment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
 
 

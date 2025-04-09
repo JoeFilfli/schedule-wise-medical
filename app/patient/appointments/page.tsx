@@ -8,6 +8,8 @@ interface Appointment {
   id: string
   status: string
   reason: string | null
+  type?: string | null
+  notes?: string | null  
   slot?: {
     startTime: string
     endTime: string
@@ -71,41 +73,54 @@ export default function AppointmentsPage() {
     a.slot?.startTime || a.scheduledStart || ''
   const endTime =
     a.slot?.endTime || a.scheduledEnd || ''
-
+  
+    
   return (
     <li key={a.id} className="list-group-item">
       <div className="d-flex justify-content-between">
         <div>
-          <strong>{doctorName}</strong><br />
+          <strong>Dr. {doctorName}</strong><br />
           {startTime && endTime && (
             <>
               {format(parseISO(startTime), 'PPpp')} → {format(parseISO(endTime), 'HH:mm')}<br />
             </>
           )}
+
+          {a.type && (
+            <div>
+              <small><strong>Type:</strong> {a.type === 'new' ? 'New Problem' : 'Follow-Up'}</small>
+            </div>
+          )}
+
+          {a.notes && (
+            <div>
+              <small><strong>Note:</strong> {a.notes}</small>
+            </div>
+          )}
+
           <small>Status: {a.status}</small><br />
           {isCancelledByDoctor && <small className="text-danger">❌ Cancelled by doctor</small>}
         </div>
-
-        <div className="d-flex flex-column align-items-end gap-1">
+        <div className="d-flex flex-column align-items-end gap-2" style={{ width: '140px' }}>
           {a.status !== 'CANCELLED' && a.slot && (
             <>
-              
               <button
                 onClick={() => router.push(`/patient/doctors/${a.slot?.doctor.id}?reschedule=${a.id}`)}
-                className="btn btn-secondary btn-sm"
+                className="btn btn-outline-secondary btn-sm w-100"
               >
                 Reschedule
               </button>
 
               <button
                 onClick={() => cancelAppointment(a.id)}
-                className="btn btn-danger btn-sm"
+                className="btn btn-outline-danger btn-sm w-100"
               >
                 Cancel
               </button>
             </>
           )}
         </div>
+
       </div>
     </li>
   )

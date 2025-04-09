@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server'
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -15,9 +15,10 @@ export async function GET(req: Request) {
       ]
     },
     select: {
-      id: true, 
+      id: true,
       firstName: true,
       lastName: true,
+      profilePicture: true,
       doctorProfile: {
         select: {
           specialty: true,
@@ -25,7 +26,14 @@ export async function GET(req: Request) {
         }
       }
     }
-  })
+  });
 
-  return NextResponse.json(doctors)
+  const formatted = doctors.map(doc => ({
+    ...doc,
+    profilePicture: doc.profilePicture
+      ? `data:image/png;base64,${Buffer.from(doc.profilePicture).toString('base64')}`
+      : null
+  }));
+
+  return NextResponse.json(formatted);
 }

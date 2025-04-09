@@ -14,6 +14,7 @@
     "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "bootstrap": "^5.3.5",
+    "cropperjs": "^2.0.0",
     "date-fns": "^4.1.0",
     "next": "15.2.4",
     "next-auth": "^4.24.11",
@@ -22,6 +23,7 @@
     "react-bootstrap": "^2.10.9",
     "react-calendar": "^5.1.0",
     "react-dom": "^19.0.0",
+    "react-easy-crop": "^5.4.1",
     "react-toastify": "^11.0.5"
   },
   "devDependencies": {
@@ -31,6 +33,7 @@
     "@types/react": "^19",
     "@types/react-big-calendar": "^1.16.1",
     "@types/react-dom": "^19",
+    "@types/react-easy-crop": "^1.16.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
     "prisma": "^6.5.0",
