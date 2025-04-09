@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏥 Hospital Web App
 
-## Getting Started
+A full-featured, role-based hospital management system built with **Next.js 14 (App Router)**, **Prisma**, **PostgreSQL**, **Bootstrap**, and **NextAuth**.
+---
 
-First, run the development server:
+## 🚀 Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- ⚙️ **Next.js 14** (App Router, SSR, Client/Server components)
+- 💾 **Prisma ORM** (PostgreSQL)
+- 🔐 **NextAuth.js** (JWT-based authentication)
+- 🗓 **react-big-calendar**
+- 💅 **Bootstrap 5** (UI styling)
+- 🌐 **TypeScript**
+
+---
+
+## 📦 Setup Instructions
+
+### 1. Clone the Repo
+
+```
+git clone [https://github.com/your-username/hospital-app.git](https://github.com/your-username/schedule-wise-medical.git)
+cd schedule-wise-mdeical
+
+```
+### 2.Install Dependencies
+```
+npm install
+
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Environment Variables
+Create a .env file:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+DATABASE_URL="postgresql://youruser:yourpass@localhost:5432/hospital_db"
+NEXTAUTH_SECRET="your-long-secret-key"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Prisma Setup
+Push schema to your DB and generate client:
 
-## Learn More
+```
+npx prisma db push
+npx prisma generate
 
-To learn more about Next.js, take a look at the following resources:
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 5. Run the App
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+npm run dev
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+Visit http://localhost:3000
