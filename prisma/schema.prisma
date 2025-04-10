@@ -87,10 +87,11 @@ model Appointment {
 
   status AppointmentStatus @default(SCHEDULED)
   reason String?
-  notes  String?           // ← Patient message
-  type   String?           // ← "new" or "follow-up"
+  notes  String?
+  type   String?
 
-  // denormalized snapshot
+  review String?
+
   doctorName     String?
   scheduledStart DateTime?
   scheduledEnd   DateTime?
@@ -102,5 +103,4 @@ model Appointment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
 

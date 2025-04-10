@@ -10,6 +10,7 @@ interface Appointment {
   reason: string | null
   type?: string | null
   notes?: string | null  
+  review?: string | null
   slot?: {
     startTime: string
     endTime: string
@@ -97,28 +98,33 @@ export default function AppointmentsPage() {
               <small><strong>Note:</strong> {a.notes}</small>
             </div>
           )}
+          {a.review && (
+            <div>
+              <small><strong>Doctor's Review:</strong> {a.review}</small>
+            </div>
+          )}
 
           <small>Status: {a.status}</small><br />
           {isCancelledByDoctor && <small className="text-danger">❌ Cancelled by doctor</small>}
         </div>
         <div className="d-flex flex-column align-items-end gap-2" style={{ width: '140px' }}>
-          {a.status !== 'CANCELLED' && a.slot && (
-            <>
-              <button
-                onClick={() => router.push(`/patient/doctors/${a.slot?.doctor.id}?reschedule=${a.id}`)}
-                className="btn btn-outline-secondary btn-sm w-100"
-              >
-                Reschedule
-              </button>
+        {a.status !== 'CANCELLED' && a.status !== 'COMPLETED' && a.status !== 'NO_SHOW' && a.slot && (
+          <>
+            <button
+              onClick={() => router.push(`/patient/doctors/${a.slot?.doctor.id}?reschedule=${a.id}`)}
+              className="btn btn-outline-secondary btn-sm w-100"
+            >
+              Reschedule
+            </button>
 
-              <button
-                onClick={() => cancelAppointment(a.id)}
-                className="btn btn-outline-danger btn-sm w-100"
-              >
-                Cancel
-              </button>
-            </>
-          )}
+            <button
+              onClick={() => cancelAppointment(a.id)}
+              className="btn btn-outline-danger btn-sm w-100"
+            >
+              Cancel
+            </button>
+          </>
+        )}
         </div>
 
       </div>

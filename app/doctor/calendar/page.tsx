@@ -40,6 +40,10 @@ export default function CalendarPage() {
   const [length, setLength] = useState(20)
   const [breakTime, setBreakTime] = useState(5)
 
+  const [review, setReview] = useState('')
+  const [newStatus, setNewStatus] = useState('COMPLETED')
+  const [updating, setUpdating] = useState(false)
+
   const hours = Array.from({ length: 12 }, (_, i) => i + 8)
 
   useEffect(() => {
@@ -74,20 +78,44 @@ export default function CalendarPage() {
   async function deleteSlot(id: string) {
     const confirmDelete = window.confirm('Are you sure you want to cancel this slot?')
     if (!confirmDelete) return
-  
+
     await fetch('/api/slots/delete', {
       method: 'DELETE',
       body: JSON.stringify({ id }),
       headers: { 'Content-Type': 'application/json' }
     })
-  
+
     await fetchSlots()
     setActiveSlot(null)
   }
-  
+
+  async function handleCompleteAppointment() {
+    if (!activeSlot?.appointment?.id) return
+    setUpdating(true)
+
+    const res = await fetch('/api/appointments/complete', {
+      method: 'POST',
+      body: JSON.stringify({
+        id: activeSlot.appointment.id,
+        status: newStatus,
+        review
+      }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    setUpdating(false)
+    if (res.ok) {
+      await fetchSlots()
+      setActiveSlot(null)
+    } else {
+      alert('Failed to update appointment.')
+    }
+  }
 
   async function deleteSlotsForDay(date: Date) {
-    const confirmDelete = window.confirm(`Are you sure you want to delete all slots for ${format(date, 'EEEE, MMM d')}?`)
+    const confirmDelete = window.confirm(`Delete all slots for ${format(date, 'EEEE, MMM d')}?`)
     if (!confirmDelete) return
 
     await fetch('/api/slots/delete-by-day', {
@@ -119,10 +147,9 @@ export default function CalendarPage() {
 
     const result = await res.json()
     if (res.ok && result.success) {
-      alert(`✅ ${result.count} slots copied from last week!`)
       await fetchSlots()
     } else {
-      alert(result.message || '❌ Failed to copy slots.')
+      alert(result.message || '❌ Failed to copy.')
     }
   }
 
@@ -136,7 +163,7 @@ export default function CalendarPage() {
           <button className="btn btn-outline-primary" onClick={goToNextWeek}>Next ➡️</button>
         </div>
         <button className="btn btn-primary" onClick={copyPreviousWeekToThisWeek}>
-          ⬅️ Copy Previous Week Schedule to This Week
+          ⬅️ Copy Previous Week Schedule
         </button>
       </div>
 
@@ -204,29 +231,71 @@ export default function CalendarPage() {
                 <button type="button" className="btn-close" onClick={() => setActiveSlot(null)} />
               </div>
               <div className="modal-body">
-                <p><strong>Time:</strong> {format(parseISO(activeSlot.startTime), 'HH:mm')} - {format(parseISO(activeSlot.endTime), 'HH:mm')}</p>
+                <p>
+                  <strong>Time:</strong>{' '}
+                  {format(parseISO(activeSlot.startTime), 'HH:mm')} -{' '}
+                  {format(parseISO(activeSlot.endTime), 'HH:mm')}
+                </p>
+
                 {activeSlot.appointment ? (
                   <>
                     <p><strong>Status:</strong> Booked</p>
                     <p><strong>Patient:</strong> {activeSlot.appointment.patient.firstName} {activeSlot.appointment.patient.lastName}</p>
-                    
                     <p><strong>Type:</strong> {activeSlot.appointment.type === 'new' ? 'New Problem' : 'Follow-Up'}</p>
-                    <p><strong>Patient Note:</strong> {activeSlot.appointment.notes}</p>
-                    
+                    <p><strong>Patient Note:</strong> {activeSlot.appointment.notes || '—'}</p>
 
-                    <button onClick={() => deleteSlot(activeSlot.id)} className="btn btn-danger">
-                      Cancel Slot & Notify Patient
-                    </button>
+                    <div className="mb-2">
+                      <label className="form-label">Doctor's Review / Prescription</label>
+                      <textarea
+                        rows={3}
+                        className="form-control"
+                        value={review}
+                        onChange={(e) => setReview(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Mark Appointment As</label>
+                      <select
+                        className="form-select"
+                        value={newStatus}
+                        onChange={(e) => setNewStatus(e.target.value)}
+                      >
+                        <option value="COMPLETED">Completed</option>
+                        <option value="NO_SHOW">No Show</option>
+                      </select>
+                    </div>
+
+                    <div className="d-flex flex-column gap-2">
+                      <button
+                        className="btn btn-primary"
+                        onClick={handleCompleteAppointment}
+                        disabled={updating}
+                      >
+                        {updating ? 'Saving...' : 'Submit & Close'}
+                      </button>
+
+                      <button
+                        className="btn btn-outline-danger"
+                        onClick={() => deleteSlot(activeSlot.id)}
+                      >
+                        ❌ Cancel Slot & Notify Patient
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
                     <p><strong>Status:</strong> Available</p>
-                    <button onClick={() => deleteSlot(activeSlot.id)} className="btn btn-danger">
-                      Delete Slot
-                    </button>
+                    <div className="d-flex flex-column gap-2">
+                      <button
+                        className="btn btn-outline-danger"
+                        onClick={() => deleteSlot(activeSlot.id)}
+                      >
+                        ❌ Delete Slot
+                      </button>
+                    </div>
                   </>
                 )}
-
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setActiveSlot(null)}>Close</button>
@@ -235,6 +304,7 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
+
 
       {/* Generate Slots Modal */}
       {selectedDate && (
@@ -262,11 +332,10 @@ export default function CalendarPage() {
                   <label className="form-label">Break Between Slots (minutes)</label>
                   <input type="number" value={breakTime} onChange={(e) => setBreakTime(parseInt(e.target.value))} className="form-control" />
                 </div>
-
                 <div className="alert alert-warning d-flex justify-content-between align-items-center">
                   <div>Need to clear this day's slots?</div>
                   <button onClick={() => deleteSlotsForDay(selectedDate)} className="btn btn-sm btn-outline-danger">
-                    Delete All Slots for {format(selectedDate, 'EEE')}
+                    Delete All Slots
                   </button>
                 </div>
               </div>
