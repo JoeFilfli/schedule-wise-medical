@@ -25,12 +25,13 @@ interface Appointment {
   scheduledEnd?: string
 }
 
-
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [isClient, setIsClient] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
+    setIsClient(true)
     fetchAppointments()
   }, [])
 
@@ -55,6 +56,8 @@ export default function AppointmentsPage() {
     }
   }
 
+  if (!isClient) return null
+
   return (
     <div className="container py-4">
       <h3 className="mb-4">My Appointments</h3>
@@ -62,75 +65,78 @@ export default function AppointmentsPage() {
       {appointments.length === 0 && <p>No appointments scheduled.</p>}
 
       <ul className="list-group">
-      {appointments.map((a) => {
-  const isCancelledByDoctor = a.status === 'CANCELLED' && a.reason === 'Cancelled by doctor'
+        {appointments.map((a) => {
+          const isCancelledByDoctor = a.status === 'CANCELLED' && a.reason === 'Cancelled by doctor'
 
-  const doctorName =
-    a.slot?.doctor
-      ? `${a.slot.doctor.firstName} ${a.slot.doctor.lastName}`
-      : a.doctorName || 'Doctor'
+          const doctorName =
+            a.slot?.doctor
+              ? `${a.slot.doctor.firstName} ${a.slot.doctor.lastName}`
+              : a.doctorName || 'Doctor'
 
-  const startTime =
-    a.slot?.startTime || a.scheduledStart || ''
-  const endTime =
-    a.slot?.endTime || a.scheduledEnd || ''
-  
-    
-  return (
-    <li key={a.id} className="list-group-item">
-      <div className="d-flex justify-content-between">
-        <div>
-          <strong>Dr. {doctorName}</strong><br />
-          {startTime && endTime && (
-            <>
-              {format(parseISO(startTime), 'PPpp')} → {format(parseISO(endTime), 'HH:mm')}<br />
-            </>
-          )}
+          const startTime = a.slot?.startTime || a.scheduledStart || ''
+          const endTime = a.slot?.endTime || a.scheduledEnd || ''
 
-          {a.type && (
-            <div>
-              <small><strong>Type:</strong> {a.type === 'new' ? 'New Problem' : 'Follow-Up'}</small>
-            </div>
-          )}
+          return (
+            <li key={a.id} className="list-group-item">
+              <div className="d-flex justify-content-between">
+                <div>
+                  <strong>Dr. {doctorName}</strong><br />
+                  {startTime && endTime && (
+                    <div>
+                      {format(parseISO(startTime), 'PPpp')} → {format(parseISO(endTime), 'HH:mm')}<br />
+                    </div>
+                  )}
 
-          {a.notes && (
-            <div>
-              <small><strong>Note:</strong> {a.notes}</small>
-            </div>
-          )}
-          {a.review && (
-            <div>
-              <small><strong>Doctor's Review:</strong> {a.review}</small>
-            </div>
-          )}
+                  {a.type && (
+                    <div>
+                      <small><strong>Type:</strong> {a.type === 'new' ? 'New Problem' : 'Follow-Up'}</small>
+                    </div>
+                  )}
 
-          <small>Status: {a.status}</small><br />
-          {isCancelledByDoctor && <small className="text-danger">❌ Cancelled by doctor</small>}
-        </div>
-        <div className="d-flex flex-column align-items-end gap-2" style={{ width: '140px' }}>
-        {a.status !== 'CANCELLED' && a.status !== 'COMPLETED' && a.status !== 'NO_SHOW' && a.slot && (
-          <>
-            <button
-              onClick={() => router.push(`/patient/doctors/${a.slot?.doctor.id}?reschedule=${a.id}`)}
-              className="btn btn-outline-secondary btn-sm w-100"
-            >
-              Reschedule
-            </button>
+                  {a.notes && (
+                    <div>
+                      <small><strong>Note:</strong> {a.notes}</small>
+                    </div>
+                  )}
 
-            <button
-              onClick={() => cancelAppointment(a.id)}
-              className="btn btn-outline-danger btn-sm w-100"
-            >
-              Cancel
-            </button>
-          </>
-        )}
-        </div>
+                  {a.review && (
+                    <div>
+                      <small><strong>Doctor&apos;s Review:</strong> {a.review}</small>
+                    </div>
+                  )}
 
-      </div>
-    </li>
-  )
-})}
+                  <small>Status: {a.status}</small><br />
+                  {isCancelledByDoctor && (
+                    <small className="text-danger">❌ Cancelled by doctor</small>
+                  )}
+                </div>
+
+                <div className="d-flex flex-column align-items-end gap-2" style={{ width: '140px' }}>
+                  {a.status !== 'CANCELLED' &&
+                    a.status !== 'COMPLETED' &&
+                    a.status !== 'NO_SHOW' &&
+                    a.slot && (
+                      <>
+                        <button
+                          onClick={() => router.push(`/patient/doctors/${a.slot?.doctor.id}?reschedule=${a.id}`)}
+                          className="btn btn-outline-secondary btn-sm w-100"
+                        >
+                          Reschedule
+                        </button>
+
+                        <button
+                          onClick={() => cancelAppointment(a.id)}
+                          className="btn btn-outline-danger btn-sm w-100"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                </div>
+              </div>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
