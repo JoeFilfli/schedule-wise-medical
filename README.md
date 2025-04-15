@@ -19,7 +19,7 @@ A full-featured, role-based hospital management system built with **Next.js 14 (
 ### 1. Clone the Repo
 
 ```
-git clone [https://github.com/your-username/hospital-app.git](https://github.com/your-username/schedule-wise-medical.git)
+git clone [https://github.com/JoeFilfli/hospital-app.git](https://github.com/your-username/schedule-wise-medical.git)
 cd schedule-wise-mdeical
 
 ```
