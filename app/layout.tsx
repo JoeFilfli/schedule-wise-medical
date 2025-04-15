@@ -7,6 +7,7 @@ import SessionWrapper from '@/components/auth/SessionWrapper';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { RecentlyViewedProvider } from '@/context/RecentlyViewedContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -29,11 +30,13 @@ export default async function RootLayout({
       <body className={inter.className}>
         <SessionWrapper>
           <ThemeProvider>
-            {isDashboardRoute ? (
-              <SidebarLayout>{children}</SidebarLayout>
-            ) : (
-              <main className="container mt-4">{children}</main>
-            )}
+            <RecentlyViewedProvider>
+              {isDashboardRoute ? (
+                <SidebarLayout>{children}</SidebarLayout>
+              ) : (
+                <main className="container mt-4">{children}</main>
+              )}
+            </RecentlyViewedProvider>
           </ThemeProvider>
         </SessionWrapper>
       </body>

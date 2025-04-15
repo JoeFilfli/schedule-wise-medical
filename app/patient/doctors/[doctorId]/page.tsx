@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
+import { useRecentlyViewed } from '@/context/RecentlyViewedContext';
 
 interface Slot {
   id: string;
@@ -12,6 +13,7 @@ interface Slot {
 }
 
 interface Doctor {
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -26,8 +28,9 @@ export default function DoctorSlotsPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const { addDoctor } = useRecentlyViewed();
 
-  const doctorId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const doctorId = Array.isArray(params.doctorId) ? params.doctorId[0] : params.doctorId;
   const oldAppointmentId = searchParams.get('reschedule');
 
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -44,16 +47,38 @@ export default function DoctorSlotsPage() {
     }
   }, [doctorId]);
 
+  useEffect(() => {
+    if (doctor && doctor.id) {
+      addDoctor({
+        id: doctor.id,
+        firstName: doctor.firstName,
+        lastName: doctor.lastName,
+        profilePicture: doctor.profilePicture,
+        doctorProfile: doctor.doctorProfile
+      });
+    }
+  }, [doctor?.id]);
+
   async function fetchSlots() {
-    const res = await fetch(`/api/doctors/${doctorId}/slots`);
-    const data = await res.json();
-    setSlots(data);
+    try {
+      const res = await fetch(`/api/doctors/${doctorId}/slots`);
+      if (!res.ok) throw new Error('Failed to fetch slots');
+      const data = await res.json();
+      setSlots(data);
+    } catch (error) {
+      console.error('Error fetching slots:', error);
+    }
   }
 
   async function fetchDoctor() {
-    const res = await fetch(`/api/doctors/${doctorId}/profile`);
-    const data = await res.json();
-    setDoctor(data);
+    try {
+      const res = await fetch(`/api/doctors/${doctorId}/profile`);
+      if (!res.ok) throw new Error('Failed to fetch doctor');
+      const data = await res.json();
+      setDoctor(data);
+    } catch (error) {
+      console.error('Error fetching doctor:', error);
+    }
   }
 
   async function bookSlot() {
@@ -100,23 +125,35 @@ export default function DoctorSlotsPage() {
       {/* Doctor Profile Header */}
       {doctor && (
         <div className="d-flex align-items-start gap-4 mb-5">
-          <Image
-            src={doctor.profilePicture || '/default-avatar.png'}
-            alt="Doctor Profile"
-            width={120}
-            height={120}
-            className="rounded-circle border shadow"
-            style={{ objectFit: 'cover' }}
-          />
+          <div className="position-relative" style={{ width: '120px', height: '120px' }}>
+            {doctor.profilePicture ? (
+              <Image
+                src={doctor.profilePicture}
+                alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
+                fill
+                className="rounded-circle border shadow"
+                style={{ objectFit: 'cover' }}
+                priority
+              />
+            ) : (
+              <div 
+                className="rounded-circle border shadow d-flex align-items-center justify-content-center bg-light"
+                style={{ width: '100%', height: '100%' }}
+              >
+                <span className="text-muted">
+                  {doctor.firstName.charAt(0)}{doctor.lastName.charAt(0)}
+                </span>
+              </div>
+            )}
+          </div>
           <div>
-        <h2 className="mb-2">Dr. {doctor.firstName} {doctor.lastName}</h2>
-          {doctor.doctorProfile?.specialty && (
-            <p className="mb-2">
-              <strong>Specialty:</strong> {doctor.doctorProfile.specialty}
-            </p>
-          )}
-        </div>
-
+            <h2 className="mb-2">Dr. {doctor.firstName} {doctor.lastName}</h2>
+            {doctor.doctorProfile?.specialty && (
+              <p className="mb-2">
+                <strong>Specialty:</strong> {doctor.doctorProfile.specialty}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -215,7 +252,7 @@ export default function DoctorSlotsPage() {
                 <button
                   className="btn btn-primary"
                   onClick={bookSlot}
-                  disabled={loading}
+                  disabled={loading || !appointmentType}
                 >
                   {loading ? 'Booking...' : 'Confirm Booking'}
                 </button>
@@ -226,4 +263,4 @@ export default function DoctorSlotsPage() {
       )}
     </div>
   );
-}
+} 

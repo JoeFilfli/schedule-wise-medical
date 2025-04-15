@@ -1,28 +1,27 @@
-import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(
-  req: Request,
+  request: Request,
   { params }: { params: { doctorId: string } }
 ) {
-  const { doctorId } = params
-
-  if (!doctorId) {
-    return NextResponse.json({ error: 'Missing doctorId' }, { status: 400 })
-  }
-
-  const slots = await prisma.slot.findMany({
-    where: {
-      doctorId,
-      startTime: {
-        gte: new Date() 
+  try {
+    const slots = await prisma.slot.findMany({
+      where: {
+        doctorId: params.doctorId,
+        startTime: {
+          gte: new Date() 
+        },
+        appointment: null
       },
-      appointment: null
-    },
-    orderBy: {
-      startTime: 'asc'
-    }
-  })
+      orderBy: {
+        startTime: 'asc'
+      }
+    })
 
-  return NextResponse.json(slots)
+    return NextResponse.json(slots)
+  } catch (error) {
+    console.error('Error fetching slots:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
