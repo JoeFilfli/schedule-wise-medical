@@ -1,11 +1,34 @@
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from './prisma';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { NextAuthOptions } from 'next-auth';
 import bcrypt from 'bcrypt';
+import { JWT } from 'next-auth/jwt';
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+declare module 'next-auth' {
+  interface User {
+    id: string;
+    role: 'DOCTOR' | 'PATIENT' | 'ADMIN';
+    firstName: string;
+    lastName: string;
+  }
+
+  interface Session {
+    user: User;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    role: 'DOCTOR' | 'PATIENT' | 'ADMIN';
+    firstName: string;
+    lastName: string;
+  }
+}
+
+export const authConfig: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma) as any,
   session: {
     strategy: 'jwt',
   },
@@ -27,7 +50,13 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        return user;
+        return {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        };
       },
     }),
   ],
@@ -43,15 +72,14 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as 'DOCTOR' | 'PATIENT' | 'ADMIN';
-        session.user.firstName = token.firstName as string;
-        session.user.lastName = token.lastName as string;
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.firstName = token.firstName;
+        session.user.lastName = token.lastName;
       }
       return session;
     },
   },
-  
   pages: {
     signIn: '/login',
   },

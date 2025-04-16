@@ -1,39 +1,76 @@
-import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authConfig } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
-  const q = searchParams.get('q') || ''
-
-  const doctors = await prisma.user.findMany({
-    where: {
-      role: 'DOCTOR',
-      OR: [
-        { firstName: { contains: q, mode: 'insensitive' } },
-        { lastName: { contains: q, mode: 'insensitive' } },
-        { doctorProfile: { specialty: { contains: q, mode: 'insensitive' } } }
-      ]
-    },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      profilePicture: true,
-      doctorProfile: {
-        select: {
-          specialty: true,
-          bio: true
-        }
-      }
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authConfig);
+    
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-  });
 
-  const formatted = doctors.map(doc => ({
-    ...doc,
-    profilePicture: doc.profilePicture
-      ? `data:image/png;base64,${Buffer.from(doc.profilePicture).toString('base64')}`
-      : null
-  }));
+    const doctors = await prisma.user.findMany({
+      where: {
+        role: 'DOCTOR',
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        profilePicture: true,
+        doctorProfile: {
+          select: {
+            specialty: true,
+          }
+        },
+        _count: {
+          select: {
+            doctorAppointments: true
+          }
+        }
+      },
+      orderBy: {
+        firstName: 'asc'
+      }
+    });
 
-  return NextResponse.json(formatted);
+    // Calculate average ratings and format profile pictures
+    const doctorsWithRatings = await Promise.all(
+      doctors.map(async (doctor) => {
+        const reviews = await prisma.review.findMany({
+          where: {
+            doctorId: doctor.id
+          },
+          select: {
+            rating: true
+          }
+        });
+
+        const averageRating = reviews.length > 0
+          ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
+          : 0;
+
+        return {
+          ...doctor,
+          profilePicture: doctor.profilePicture 
+            ? `data:image/jpeg;base64,${Buffer.from(doctor.profilePicture).toString('base64')}`
+            : '/default-avatar.png',
+          doctorProfile: {
+            ...doctor.doctorProfile,
+            averageRating
+          }
+        };
+      })
+    );
+
+    return NextResponse.json(doctorsWithRatings);
+  } catch (error) {
+    console.error('Error fetching doctors:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch doctors' },
+      { status: 500 }
+    );
+  }
 }

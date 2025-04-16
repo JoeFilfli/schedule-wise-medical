@@ -1,30 +1,24 @@
 import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
-export default withAuth({
-  pages: {
-    signIn: '/login',
+export default withAuth(
+  function middleware(req) {
+    const isLoggedIn = !!req.nextauth.token;
+    const isOnDashboard = req.nextUrl.pathname.startsWith('/dashboard');
+    
+    if (isOnDashboard && !isLoggedIn) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+    
+    return NextResponse.next();
   },
-  callbacks: {
-    authorized: ({ token, req }) => {
-      const pathname = req.nextUrl.pathname;
-
-      if (!token) return false;
-
-      // Protect doctor routes
-      if (pathname.startsWith('/doctor')) {
-        return token.role === 'DOCTOR' || token.role === 'ADMIN';
-      }
-
-      // Protect patient routes
-      if (pathname.startsWith('/patient')) {
-        return token.role === 'PATIENT';
-      }
-
-      return true;
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
     },
-  },
-});
+  }
+);
 
 export const config = {
-  matcher: ['/doctor/:path*', '/patient/:path*'],
+  matcher: ['/dashboard/:path*', '/doctor/:path*', '/patient/:path*', '/admin/:path*'],
 };

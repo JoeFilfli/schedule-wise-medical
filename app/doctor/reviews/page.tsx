@@ -1,9 +1,9 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authConfig } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export default async function DoctorReviews() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authConfig);
   if (!session || session.user.role !== 'DOCTOR') redirect('/login');
 
   return (

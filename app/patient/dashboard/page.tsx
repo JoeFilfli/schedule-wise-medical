@@ -1,11 +1,12 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authConfig } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import DashboardWidget from '@/components/dashboard/DashboardWidget';
 import RecentlyViewedDoctors from '@/components/dashboard/RecentlyViewedDoctors';
+import UpcomingAppointments from '@/components/dashboard/UpcomingAppointments';
 
 export default async function PatientDashboard() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authConfig);
   if (!session || session.user.role !== 'PATIENT') redirect('/login');
 
   const widgets = [
@@ -59,17 +60,22 @@ export default async function PatientDashboard() {
         <h1 className="h2 mb-0">Welcome, {session.user.firstName}</h1>
       </div>
       
-      <div className="row g-4 g-md-5">
-        {widgets.map((widget, index) => (
-          <div key={index} className="col-12 col-sm-6 col-lg-4">
-            <DashboardWidget {...widget} />
+      <div className="row g-4">
+        <div className="col-12 col-lg-8">
+          <div className="row g-4">
+            {widgets.map((widget, index) => (
+              <div key={index} className="col-12 col-sm-6 col-md-4">
+                <DashboardWidget {...widget} />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-
-      <div className="row mt-4">
-        <div className="col-12">
-          <RecentlyViewedDoctors />
+        </div>
+        
+        <div className="col-12 col-lg-4">
+          <div className="d-flex flex-column gap-4">
+            <UpcomingAppointments />
+            <RecentlyViewedDoctors />
+          </div>
         </div>
       </div>
     </div>

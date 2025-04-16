@@ -38,6 +38,8 @@ model User {
   doctorSlots     Slot[]        @relation("DoctorSlots")
   doctorAppointments  Appointment[] @relation("DoctorAppointments")
   patientAppointments Appointment[] @relation("PatientAppointments")
+  doctorReviews   Review[]      @relation("DoctorReviews")
+  patientReviews  Review[]      @relation("PatientReviews")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -99,6 +101,20 @@ model Appointment {
   slot    Slot? @relation(fields: [slotId], references: [id])
   doctor  User  @relation("DoctorAppointments", fields: [doctorId], references: [id])
   patient User  @relation("PatientAppointments", fields: [patientId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String
+  doctorId  String
+  patientId String
+
+  doctor  User @relation("DoctorReviews", fields: [doctorId], references: [id])
+  patient User @relation("PatientReviews", fields: [patientId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

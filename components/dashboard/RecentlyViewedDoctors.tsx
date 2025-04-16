@@ -8,11 +8,19 @@ interface Doctor {
   id: string;
   firstName: string;
   lastName: string;
-  profilePicture: string | null;
+  profilePicture?: string | null;
   doctorProfile?: {
-    specialty: string | null;
+    specialty: string;
   } | null;
 }
+
+const specialtyColors: { [key: string]: { bg: string, text: string } } = {
+  'Ophthalmologist': { bg: '#FFE6E6', text: '#FF69B4' },
+  'General Practitioner (GP)': { bg: '#E6E6FF', text: '#4169E1' },
+  'Hepatologist': { bg: '#E6FFF9', text: '#20B2AA' },
+  'Rheumatologist': { bg: '#FFE6F0', text: '#FF1493' },
+  'default': { bg: '#E6E6E6', text: '#666666' }
+};
 
 export default function RecentlyViewedDoctors() {
   const { recentDoctors, clearRecentDoctors } = useRecentlyViewed();
@@ -21,63 +29,73 @@ export default function RecentlyViewedDoctors() {
     return null;
   }
 
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
+  const getSpecialtyColors = (specialty: string) => {
+    return specialtyColors[specialty] || specialtyColors.default;
+  };
+
   return (
-    <div className="bg-white rounded-3 p-3 shadow-sm" style={{ maxWidth: '400px' }}>
-      <div className="d-flex justify-content-between align-items-center mb-2">
+    <div className="bg-white rounded-4 p-4 shadow-sm">
+      <div className="d-flex justify-content-between align-items-start mb-2">
         <div>
-          <h5 className="mb-0 fw-semibold small">Recently Viewed</h5>
+          <h5 className="mb-1 fw-bold">Recent Viewed</h5>
+          <h6 className="text-dark mb-4">Doctor Profiles</h6>
         </div>
-        <button 
-          onClick={clearRecentDoctors}
-          className="btn btn-sm btn-outline-secondary py-0 px-2"
-          style={{ fontSize: '0.75rem' }}
-        >
-          Clear
-        </button>
       </div>
       
-      <div className="d-flex flex-wrap gap-2">
-        {recentDoctors.map((doctor) => (
-          <Link 
-            key={doctor.id}
-            href={`/patient/doctors/${doctor.id}`}
-            className="text-decoration-none"
-          >
-            <div className="d-flex align-items-center gap-2 p-1 rounded-2 hover-bg-light transition-all">
-              <div className="position-relative" style={{ width: '32px', height: '32px' }}>
-                {doctor.profilePicture ? (
-                  <Image
-                    src={doctor.profilePicture}
-                    alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
-                    fill
-                    className="rounded-circle border"
-                    style={{ objectFit: 'cover' }}
-                    priority
-                  />
-                ) : (
-                  <div 
-                    className="rounded-circle border d-flex align-items-center justify-content-center bg-light"
-                    style={{ width: '100%', height: '100%' }}
-                  >
-                    <span className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
-                      {doctor.firstName.charAt(0)}{doctor.lastName.charAt(0)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div>
-                <div className="text-dark" style={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                  Dr. {doctor.firstName} {doctor.lastName}
+      <div className="d-flex flex-column gap-4">
+        {recentDoctors.map((doctor) => {
+          const initials = getInitials(doctor.firstName, doctor.lastName);
+          const specialty = doctor.doctorProfile?.specialty || 'Doctor';
+          const colors = getSpecialtyColors(specialty);
+          
+          return (
+            <div
+              key={doctor.id}
+              className="d-flex align-items-center justify-content-between"
+            >
+              <div className="d-flex align-items-center gap-3">
+                <div 
+                  className="rounded-circle d-flex align-items-center justify-content-center position-relative overflow-hidden"
+                  style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    backgroundColor: colors.bg,
+                    color: colors.text,
+                    fontSize: '16px',
+                    fontWeight: 500
+                  }}
+                >
+                  {doctor.profilePicture ? (
+                    <Image
+                      src={doctor.profilePicture}
+                      alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      sizes="48px"
+                    />
+                  ) : (
+                    initials
+                  )}
                 </div>
-                {doctor.doctorProfile?.specialty && (
-                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>
-                    {doctor.doctorProfile.specialty}
-                  </small>
-                )}
+                <div>
+                  <div className="fw-semibold mb-1">Dr {doctor.firstName} {doctor.lastName}</div>
+                  <div style={{ color: colors.text, fontSize: '14px' }}>{specialty}</div>
+                </div>
               </div>
+              <Link 
+                href={`/patient/doctors/${doctor.id}`}
+                className="btn btn-link text-decoration-none"
+                style={{ fontSize: '14px' }}
+              >
+                View Profile
+              </Link>
             </div>
-          </Link>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

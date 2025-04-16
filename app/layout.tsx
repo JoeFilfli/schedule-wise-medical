@@ -6,7 +6,7 @@ import ThemeProvider from './theme-provider';
 import SessionWrapper from '@/components/auth/SessionWrapper';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authConfig } from '@/lib/auth';
 import { RecentlyViewedProvider } from '@/context/RecentlyViewedContext';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -21,20 +21,20 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authConfig);
 
   const isDashboardRoute = session && ['DOCTOR', 'PATIENT'].includes(session.user.role);
 
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" style={{ height: '100%' }}>
+      <body className={inter.className} style={{ height: '100%' }}>
         <SessionWrapper>
           <ThemeProvider>
             <RecentlyViewedProvider>
               {isDashboardRoute ? (
                 <SidebarLayout>{children}</SidebarLayout>
               ) : (
-                <main className="container mt-4">{children}</main>
+                <main className="container mt-4" style={{ height: '100%' }}>{children}</main>
               )}
             </RecentlyViewedProvider>
           </ThemeProvider>

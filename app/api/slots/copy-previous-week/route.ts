@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authConfig } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { addDays, parseISO } from 'date-fns'
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(authConfig)
 
   if (!session?.user || session.user.role !== 'DOCTOR') {
     console.log('[DEBUG] ❌ Unauthorized access')

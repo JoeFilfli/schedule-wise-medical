@@ -1,11 +1,11 @@
 // app/login/page.tsx
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authConfig } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import LoginForm from './LoginForm';
 
 export default async function LoginPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authConfig);
 
   if (session) {
     redirect('/'); // if logged in, skip login page

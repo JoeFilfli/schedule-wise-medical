@@ -10,6 +10,7 @@ interface Slot {
   id: string;
   startTime: string;
   endTime: string;
+  doctorId: string;
 }
 
 interface Doctor {
@@ -61,12 +62,15 @@ export default function DoctorSlotsPage() {
 
   async function fetchSlots() {
     try {
-      const res = await fetch(`/api/doctors/${doctorId}/slots`);
-      if (!res.ok) throw new Error('Failed to fetch slots');
+      const res = await fetch(`/api/doctors/${params.doctorId}/slots`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch slots');
+      }
       const data = await res.json();
-      setSlots(data);
+      setSlots(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching slots:', error);
+      setSlots([]);
     }
   }
 
@@ -75,9 +79,13 @@ export default function DoctorSlotsPage() {
       const res = await fetch(`/api/doctors/${doctorId}/profile`);
       if (!res.ok) throw new Error('Failed to fetch doctor');
       const data = await res.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
       setDoctor(data);
     } catch (error) {
       console.error('Error fetching doctor:', error);
+      // You might want to show an error message to the user here
     }
   }
 
@@ -114,11 +122,13 @@ export default function DoctorSlotsPage() {
   }
 
   const groupedSlots: Record<string, Slot[]> = {};
-  slots.forEach((slot) => {
-    const dateKey = format(parseISO(slot.startTime), 'yyyy-MM-dd');
-    if (!groupedSlots[dateKey]) groupedSlots[dateKey] = [];
-    groupedSlots[dateKey].push(slot);
-  });
+  if (Array.isArray(slots) && slots.length > 0) {
+    slots.forEach((slot) => {
+      const dateKey = format(parseISO(slot.startTime), 'yyyy-MM-dd');
+      if (!groupedSlots[dateKey]) groupedSlots[dateKey] = [];
+      groupedSlots[dateKey].push(slot);
+    });
+  }
 
   return (
     <div className="container py-4">
@@ -126,25 +136,14 @@ export default function DoctorSlotsPage() {
       {doctor && (
         <div className="d-flex align-items-start gap-4 mb-5">
           <div className="position-relative" style={{ width: '120px', height: '120px' }}>
-            {doctor.profilePicture ? (
-              <Image
-                src={doctor.profilePicture}
-                alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
-                fill
-                className="rounded-circle border shadow"
-                style={{ objectFit: 'cover' }}
-                priority
-              />
-            ) : (
-              <div 
-                className="rounded-circle border shadow d-flex align-items-center justify-content-center bg-light"
-                style={{ width: '100%', height: '100%' }}
-              >
-                <span className="text-muted">
-                  {doctor.firstName.charAt(0)}{doctor.lastName.charAt(0)}
-                </span>
-              </div>
-            )}
+            <Image
+              src={doctor?.profilePicture || '/default-avatar.png'}
+              alt={`Dr. ${doctor?.firstName} ${doctor?.lastName}`}
+              fill
+              className="rounded-circle border shadow"
+              style={{ objectFit: 'cover' }}
+              priority
+            />
           </div>
           <div>
             <h2 className="mb-2">Dr. {doctor.firstName} {doctor.lastName}</h2>
@@ -159,33 +158,35 @@ export default function DoctorSlotsPage() {
 
       <h4 className="mb-3">Available Slots</h4>
 
-      {slots.length > 0 && (
-        <p className="text-muted mb-4">
-          Select a time slot to book your appointment.
-        </p>
+      {Object.keys(groupedSlots).length > 0 ? (
+        <>
+          <p className="text-muted mb-4">
+            Select a time slot to book your appointment.
+          </p>
+          {Object.entries(groupedSlots).map(([date, daySlots]) => (
+            <div key={date} className="mb-4">
+              <h5 className="fw-bold border-bottom pb-1 mb-3">
+                {format(parseISO(daySlots[0].startTime), 'EEEE, MMMM d')}
+              </h5>
+
+              <div className="d-flex flex-wrap gap-2">
+                {daySlots.map((slot) => (
+                  <button
+                    key={slot.id}
+                    onClick={() => setSelectedSlot(slot)}
+                    className="btn btn-outline-success fs-6 px-4 py-2"
+                  >
+                    {format(parseISO(slot.startTime), 'HH:mm')} -{' '}
+                    {format(parseISO(slot.endTime), 'HH:mm')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </>
+      ) : (
+        <p>No available slots</p>
       )}
-      {slots.length === 0 && <p>No available slots</p>}
-
-      {Object.entries(groupedSlots).map(([date, daySlots]) => (
-        <div key={date} className="mb-4">
-          <h5 className="fw-bold border-bottom pb-1 mb-3">
-            {format(parseISO(daySlots[0].startTime), 'EEEE, MMMM d')}
-          </h5>
-
-          <div className="d-flex flex-wrap gap-2">
-            {daySlots.map((slot) => (
-              <button
-                key={slot.id}
-                onClick={() => setSelectedSlot(slot)}
-                className="btn btn-outline-success fs-6 px-4 py-2"
-              >
-                {format(parseISO(slot.startTime), 'HH:mm')} -{' '}
-                {format(parseISO(slot.endTime), 'HH:mm')}
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
 
       {/* Booking Modal */}
       {selectedSlot && (

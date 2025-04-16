@@ -1,11 +1,11 @@
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authConfig } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
 
 export async function POST(req: Request) {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authConfig)
     if (!session?.user || session.user.role !== 'PATIENT') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }

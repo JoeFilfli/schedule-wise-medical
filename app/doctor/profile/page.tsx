@@ -1,11 +1,11 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authConfig } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import EditProfileForm from '@/components/EditProfileForm';
 
 export default async function DoctorProfile() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authConfig);
   if (!session || session.user.role !== 'DOCTOR') redirect('/login');
 
   const user = await prisma.user.findUnique({

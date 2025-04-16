@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authConfig } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 const SYSTEM_PROMPT_TEMPLATE = `
@@ -8,33 +8,37 @@ You are an AI chatbot for a hospital booking website.
 You are chatting with a patient. Their name is {firstName} {lastName}. Be friendly, helpful, and clear in your tone.
 You can help users with tasks like:
 - Viewing available doctors
-- Checking a doctor’s availability
+- Checking a doctor's availability
 - Booking an appointment
 
-Always respond with a valid JSON object.
-
-Respond with one of the following:
-
-1. If you need to trigger an action:
+When a user asks to see doctors or lists doctors, respond with:
 {
-  "action": "ListDoctors" | "ShowSlots" | "BookAppointment",
-  "doctor": "Dr. Full Name" (optional),
-  "response": "optional friendly message"
+  "action": "ListDoctors",
+  "response": "Here are the available doctors:"
 }
 
-2. If no action needed:
+When a user asks about a specific doctor's availability, respond with:
+{
+  "action": "ShowSlots",
+  "doctor": "Dr. [First Name] [Last Name]",
+  "response": "I'll help you check availability for Dr. [First Name] [Last Name]"
+}
+
+For general questions or when no specific action is needed, respond with:
 {
   "action": "Response",
-  "response": "Just a friendly reply"
+  "response": "Your friendly response here"
 }
 
 ⚠️ Output only valid JSON. No markdown. No code block.
 `
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
-  const firstName = session?.user?.firstName || 'User'
-  const lastName = session?.user?.lastName || ''
+  const session = await getServerSession(authConfig)
+  
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const body = await req.json()
   const { messages, formData } = body
@@ -74,23 +78,37 @@ export async function POST(req: Request) {
     })
 
     if (slots.length === 0) {
-      return NextResponse.json({ reply: '📅 No available slots in this date range.' })
+      return NextResponse.json({ 
+        reply: JSON.stringify({
+          action: 'Response',
+          response: '📅 No available slots in this date range.'
+        })
+      })
     }
 
-    const formattedSlots = slots.map((slot) => ({
-      id: slot.id,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-      doctor: {
-        firstName: slot.doctor.firstName,
-        lastName: slot.doctor.lastName,
-      },
-    }))
+    // Group slots by date
+    const groupedSlots = slots.reduce((acc, slot) => {
+      const date = new Date(slot.startTime).toISOString().split('T')[0]
+      if (!acc[date]) {
+        acc[date] = []
+      }
+      acc[date].push({
+        id: slot.id,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        doctor: {
+          firstName: slot.doctor.firstName,
+          lastName: slot.doctor.lastName,
+        },
+      })
+      return acc
+    }, {} as Record<string, any[]>)
 
     return NextResponse.json({
       reply: JSON.stringify({
         action: 'RenderSlotsWithBookingUI',
-        slots: formattedSlots,
+        slots: groupedSlots,
+        doctor: formData?.doctor || 'All Doctors',
       }),
     })
   }
@@ -98,7 +116,7 @@ export async function POST(req: Request) {
   // 💬 Process Gemini intent
   const userPrompt = messages.map((m: any) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n')
   const prompt =
-    SYSTEM_PROMPT_TEMPLATE.replace('{firstName}', firstName).replace('{lastName}', lastName) +
+    SYSTEM_PROMPT_TEMPLATE.replace('{firstName}', session.user.firstName).replace('{lastName}', session.user.lastName) +
     `\n${userPrompt}\nAssistant:`
 
   const geminiRes = await fetch(
@@ -146,13 +164,26 @@ export async function POST(req: Request) {
         .join('\n')
 
       return NextResponse.json({
-        reply: `${parsed.response || '👨‍⚕️ Here are some available doctors:'}\n\n${doctorList}`,
+        reply: JSON.stringify({
+          action: 'Response',
+          response: `${parsed.response || '👨‍⚕️ Here are some available doctors:'}\n\n${doctorList}`
+        })
       })
     }
 
-    return NextResponse.json({ reply: parsed.response || '✅ How can I help you next?' })
+    return NextResponse.json({ 
+      reply: JSON.stringify({
+        action: 'Response',
+        response: parsed.response || '✅ How can I help you next?'
+      })
+    })
   } catch (err) {
     console.error('❌ Invalid JSON from Gemini:', raw)
-    return NextResponse.json({ reply: '⚠️ Sorry, I could not understand that.' })
+    return NextResponse.json({ 
+      reply: JSON.stringify({
+        action: 'Response',
+        response: '⚠️ Sorry, I could not understand that.'
+      })
+    })
   }
 }
