@@ -35,6 +35,7 @@ Create a .env file:
 ```
 DATABASE_URL="postgresql://youruser:yourpass@localhost:5432/hospital_db"
 NEXTAUTH_SECRET="your-long-secret-key"
+NEXTAUTH_URL="url localhost link"
 ```
 
 ### 4. Prisma Setup
