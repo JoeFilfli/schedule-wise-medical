@@ -7,11 +7,12 @@ import SessionWrapper from '@/components/auth/SessionWrapper';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { RecentlyViewedProvider } from '@/context/RecentlyViewedContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SmartMed Scheduler',
+  title: 'Smart Medical Scheduler',
   description: 'Responsive hospital management platform',
 };
 
@@ -25,15 +26,17 @@ export default async function RootLayout({
   const isDashboardRoute = session && ['DOCTOR', 'PATIENT'].includes(session.user.role);
 
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" style={{ height: '100%' }}>
+      <body className={inter.className} style={{ height: '100%' }}>
         <SessionWrapper>
           <ThemeProvider>
-            {isDashboardRoute ? (
-              <SidebarLayout>{children}</SidebarLayout>
-            ) : (
-              <main className="container mt-4">{children}</main>
-            )}
+            <RecentlyViewedProvider>
+              {isDashboardRoute ? (
+                <SidebarLayout>{children}</SidebarLayout>
+              ) : (
+                <main className="container mt-4" style={{ height: '100%' }}>{children}</main>
+              )}
+            </RecentlyViewedProvider>
           </ThemeProvider>
         </SessionWrapper>
       </body>

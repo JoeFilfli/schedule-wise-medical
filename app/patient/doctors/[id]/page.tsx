@@ -1,20 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
+
+import FullCalendar from '@fullcalendar/react';
+import type { EventInput, EventClickArg } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
 
 interface Slot {
   id: string;
   startTime: string;
   endTime: string;
+  patientName?: string;
 }
 
 interface Doctor {
   firstName: string;
   lastName: string;
-  email: string;
   profilePicture: string | null;
   doctorProfile: {
     specialty: string | null;
@@ -22,138 +28,175 @@ interface Doctor {
   } | null;
 }
 
+interface Appointment {
+  id: string;
+  slot: {
+    id: string;
+    startTime: string;
+    endTime: string;
+    doctor: { id: string };
+  };
+}
+
 export default function DoctorSlotsPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const calendarRef = useRef<FullCalendar>(null);
 
-  const doctorId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const oldAppointmentId = searchParams.get('reschedule');
+  const doctorId     = Array.isArray(params.id) ? params.id[0] : params.id;
+  const rescheduleId = searchParams.get('reschedule') ?? undefined;
 
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [doctor, setDoctor] = useState<Doctor | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
-  const [appointmentType, setAppointmentType] = useState<string>('');
-  const [note, setNote] = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const [slots, setSlots]               = useState<Slot[]>([]);
+  const [events, setEvents]             = useState<EventInput[]>([]);
+  const [doctor, setDoctor]             = useState<Doctor|null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<Slot|null>(null);
+  const [oldSlot, setOldSlot]           = useState<Slot|null>(null);
+  const [appointmentType, setAppointmentType] = useState('');
+  const [note, setNote]                       = useState('');
+  const [loading, setLoading]                 = useState(false);
 
+  // Fetch old appointment slot when rescheduling
   useEffect(() => {
-    if (doctorId) {
-      fetchSlots();
-      fetchDoctor();
-    }
-  }, [doctorId]);
+    if (!rescheduleId) return;
+    fetch('/api/appointments/me')
+      .then(r => r.json())
+      .then((data: Appointment[]) => {
+        const appt = data.find(a => a.id === rescheduleId);
+        if (appt) {
+          setOldSlot({
+            id:        appt.slot.id,
+            startTime: appt.slot.startTime,
+            endTime:   appt.slot.endTime
+          });
+          // scroll to it for visibility
+          const time = appt.slot.startTime.slice(11);
+          calendarRef.current?.getApi().scrollToTime(time);
+        }
+      })
+      .catch(console.error);
+  }, [rescheduleId]);
 
-  async function fetchSlots() {
-    const res = await fetch(`/api/doctors/${doctorId}/slots`);
-    const data = await res.json();
-    setSlots(data);
-  }
+  // Fetch slots & doctor, build events including oldSlot
+  useEffect(() => {
+    if (!doctorId) return;
+    Promise.all([
+      fetch(`/api/doctors/${doctorId}/slots`),
+      fetch(`/api/doctors/${doctorId}/profile`)
+    ])
+      .then(async ([slotsRes, docRes]) => {
+        const slotsData: Slot[] = await slotsRes.json();
+        setSlots(slotsData);
+        setDoctor(await docRes.json());
 
-  async function fetchDoctor() {
-    const res = await fetch(`/api/doctors/${doctorId}/profile`);
-    const data = await res.json();
-    setDoctor(data);
-  }
+        const evts: EventInput[] = slotsData.map(s => ({
+          id: s.id,
+          title: s.patientName ?? 'Available',
+          start: s.startTime,
+          end: s.endTime,
+          classNames: s.id === oldSlot?.id ? ['old-slot'] : []
+        }));
+
+        // If oldSlot isn't in the fetched free slots, add it explicitly
+        if (oldSlot && !slotsData.some(s => s.id === oldSlot.id)) {
+          evts.push({
+            id: oldSlot.id,
+            title: 'Your Booking',
+            start: oldSlot.startTime,
+            end: oldSlot.endTime,
+            classNames: ['old-slot']
+          });
+        }
+
+        setEvents(evts);
+      })
+      .catch(console.error);
+  }, [doctorId, oldSlot]);
 
   async function bookSlot() {
     if (!selectedSlot || !appointmentType) return;
-
     setLoading(true);
-
-    if (oldAppointmentId) {
+    if (rescheduleId) {
       await fetch('/api/appointments/cancel', {
-        method: 'POST',
-        body: JSON.stringify({ appointmentId: oldAppointmentId }),
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ appointmentId: rescheduleId })
       });
     }
-
     const res = await fetch('/api/appointments/book', {
-      method: 'POST',
-      body: JSON.stringify({
-        slotId: selectedSlot.id,
-        type: appointmentType,
-        note,
-      }),
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        slotId: selectedSlot.id,
+        type:   appointmentType,
+        note
+      })
     });
-
     setLoading(false);
+    if (res.ok) router.push('/patient/appointments');
+    else alert('Booking failed.');
+  }
 
-    if (res.ok) {
-      router.push('/patient/appointments');
-    } else {
-      alert('Booking failed.');
+  function handleEventClick(info: EventClickArg) {
+    const slot = slots.find(s => s.id === info.event.id) || oldSlot;
+    if (slot) {
+      setSelectedSlot(slot);
     }
   }
 
-  const groupedSlots: Record<string, Slot[]> = {};
-  slots.forEach((slot) => {
-    const dateKey = format(parseISO(slot.startTime), 'yyyy-MM-dd');
-    if (!groupedSlots[dateKey]) groupedSlots[dateKey] = [];
-    groupedSlots[dateKey].push(slot);
-  });
-
   return (
     <div className="container py-4">
-      {/* Doctor Profile Header */}
+      {/* Doctor’s Calendar Title & Photo */}
       {doctor && (
-        <div className="d-flex align-items-start gap-4 mb-5">
+        <div className="d-flex align-items-center mb-4">
           <Image
             src={doctor.profilePicture || '/default-avatar.png'}
-            alt="Doctor Profile"
-            width={120}
-            height={120}
-            className="rounded-circle border shadow"
-            style={{ objectFit: 'cover' }}
+            alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
+            width={80} height={80}
+            className="rounded-circle border me-3"
           />
-          <div>
-        <h2 className="mb-2">Dr. {doctor.firstName} {doctor.lastName}</h2>
-          {doctor.doctorProfile?.specialty && (
-            <p className="mb-2">
-              <strong>Specialty:</strong> {doctor.doctorProfile.specialty}
-            </p>
-          )}
-        </div>
-
+          <h4 className="mb-0">
+            Dr. {doctor.firstName} {doctor.lastName}’s Calendar
+          </h4>
         </div>
       )}
 
-      <h4 className="mb-3">Available Slots</h4>
-
-      {slots.length > 0 && (
-        <p className="text-muted mb-4">
-          Select a time slot to book your appointment.
-        </p>
-      )}
-      {slots.length === 0 && <p>No available slots</p>}
-
-      {Object.entries(groupedSlots).map(([date, daySlots]) => (
-        <div key={date} className="mb-4">
-          <h5 className="fw-bold border-bottom pb-1 mb-3">
-            {format(parseISO(daySlots[0].startTime), 'EEEE, MMMM d')}
-          </h5>
-
-          <div className="d-flex flex-wrap gap-2">
-            {daySlots.map((slot) => (
-              <button
-                key={slot.id}
-                onClick={() => setSelectedSlot(slot)}
-                className="btn btn-outline-success fs-6 px-4 py-2"
-              >
-                {format(parseISO(slot.startTime), 'HH:mm')} -{' '}
-                {format(parseISO(slot.endTime), 'HH:mm')}
-              </button>
-            ))}
-          </div>
+      {/* Light-red warning banner */}
+      {oldSlot && (
+        <div className="alert mb-3 old-banner">
+          <strong>Your Current Booking:</strong><br/>
+          {format(parseISO(oldSlot.startTime), 'PPpp')} → {format(parseISO(oldSlot.endTime), 'p')}
         </div>
-      ))}
+      )}
+
+      {/* Calendar */}
+      <FullCalendar
+        ref={calendarRef}
+        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+        initialView="timeGridWeek"
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        }}
+        slotMinTime="08:00:00"
+        slotMaxTime="19:00:00"
+        allDaySlot={false}
+        navLinks
+        events={events}
+        eventClick={handleEventClick}
+        height="auto"
+      />
 
       {/* Booking Modal */}
       {selectedSlot && (
-        <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: '#00000080' }}>
-          <div className="modal-dialog">
+        <div
+          className="modal fade show d-block"
+          tabIndex={-1}
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          role="dialog"
+        >
+          <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Confirm Appointment</h5>
@@ -164,46 +207,47 @@ export default function DoctorSlotsPage() {
                 />
               </div>
               <div className="modal-body">
-                <p><strong>Selected Time:</strong><br />
-                  {format(parseISO(selectedSlot.startTime), 'PPPP p')} - {format(parseISO(selectedSlot.endTime), 'p')}
+                <p>
+                  <strong>Time:</strong><br/>
+                  {format(parseISO(selectedSlot.startTime), 'PPpp')} →{' '}
+                  {format(parseISO(selectedSlot.endTime), 'p')}
                 </p>
-
-                <div className="mb-3">
-                  <label className="form-label">Appointment Type</label>
+                <fieldset className="mb-3">
+                  <legend>Type</legend>
                   <div className="form-check">
                     <input
-                      className="form-check-input"
+                      id="type-new"
+                      name="type"
                       type="radio"
-                      name="appointmentType"
+                      className="form-check-input"
                       value="new"
-                      onChange={(e) => setAppointmentType(e.target.value)}
-                      id="new"
+                      onChange={e => setAppointmentType(e.target.value)}
                     />
-                    <label className="form-check-label" htmlFor="new">New Problem</label>
+                    <label htmlFor="type-new" className="form-check-label">
+                      New Problem
+                    </label>
                   </div>
                   <div className="form-check">
                     <input
-                      className="form-check-input"
+                      id="type-follow"
+                      name="type"
                       type="radio"
-                      name="appointmentType"
+                      className="form-check-input"
                       value="follow-up"
-                      onChange={(e) => setAppointmentType(e.target.value)}
-                      id="follow-up"
+                      onChange={e => setAppointmentType(e.target.value)}
                     />
-                    <label className="form-check-label" htmlFor="follow-up">Follow-Up</label>
+                    <label htmlFor="type-follow" className="form-check-label">
+                      Follow‑Up
+                    </label>
                   </div>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Message to Doctor (optional)</label>
-                  <textarea
-                    className="form-control"
-                    rows={3}
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder="Your message..."
-                  />
-                </div>
+                </fieldset>
+                <textarea
+                  className="form-control mb-3"
+                  rows={3}
+                  placeholder="Optional note…"
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                />
               </div>
               <div className="modal-footer">
                 <button
@@ -215,15 +259,38 @@ export default function DoctorSlotsPage() {
                 <button
                   className="btn btn-primary"
                   onClick={bookSlot}
-                  disabled={loading}
+                  disabled={!appointmentType || loading}
                 >
-                  {loading ? 'Booking...' : 'Confirm Booking'}
+                  {loading ? 'Booking…' : 'Confirm'}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Light-red styles */}
+      <style jsx global>{`
+      /* Existing overrides… */
+      .old-slot {
+        background: #fde2e2 !important;
+        border:    2px dashed #f5c2c2 !important;
+        color:     #842029 !important;
+      }
+      .old-banner {
+        background-color: #fde2e2 !important;
+        color:            #842029 !important;
+        border:           1px solid #f5c2c2 !important;
+      }
+
+      /* Highlight "today" in light blue */
+      .fc .fc-day-today,
+      .fc .fc-timegrid-col .fc-timegrid-col-axis:has(+ .fc-timegrid-col[data-date].fc-col-today),
+      .fc .fc-timegrid-col-frame .fc-daygrid-day.fc-col-today {
+        background-color: #e0f7fa !important;
+      }
+    `}</style>
+
     </div>
   );
 }
