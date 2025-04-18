@@ -11,7 +11,7 @@ import { authOptions } from '@/lib/auth';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Hospital Web App',
+  title: 'SmartMed Scheduler',
   description: 'Responsive hospital management platform',
 };
 
