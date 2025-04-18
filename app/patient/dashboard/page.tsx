@@ -1,14 +1,42 @@
 // app/patient/dashboard/page.tsx
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import DashboardWidget from '@/components/dashboard/DashboardWidget';
 import RecentlyViewedDoctors from '@/components/dashboard/RecentlyViewedDoctors';
 import UpcomingAppointments from '@/components/dashboard/UpcomingAppointments';
+import PageHeader from '@/components/layout/PageHeader';
 
-export default async function PatientDashboard() {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'PATIENT') redirect('/login');
+export default function PatientDashboard() {
+  const { data: session, status } = useSession();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    
+    // Check if we should redirect
+    if (status === 'unauthenticated') {
+      redirect('/login');
+    }
+  }, [status]);
+
+  // Add loading state when not mounted or session is loading
+  if (!mounted || status === 'loading') {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '400px' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Check authentication and role
+  if (!session || session.user.role !== 'PATIENT') {
+    return null; // Redirect is handled in useEffect
+  }
 
   const widgets = [
     {
@@ -56,33 +84,36 @@ export default async function PatientDashboard() {
   ];
 
   return (
-    <div className="container-fluid py-5 px-4 px-md-5">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-5">
-        <h1 className="h2 mb-0">Welcome, {session.user.firstName}</h1>
-      </div>
+    <div className="content-page">
+      <PageHeader 
+        title={`Welcome, ${session?.user.firstName || 'User'}`}
+        subtitle="Here's your medical dashboard overview"
+        size="large"
+      />
+      
+      <div className="page-content">
+        <div className="row g-4">
+          {/* Main column: Upcoming + Widgets */}
+          <div className="col-12 col-lg-8">
+            {/* Upcoming Appointments at top */}
+            <div className="mb-4">
+              <UpcomingAppointments />
+            </div>
 
-      <div className="row g-4">
-        {/* Main column: Upcoming + Widgets */}
-        <div className="col-12 col-lg-8">
-          {/* Upcoming Appointments at top */}
-          <div className="mb-4">
-            <UpcomingAppointments />
+            {/* Dashboard cards */}
+            <div className="row g-4">
+              {widgets.map((widget, idx) => (
+                <div key={`widget-${idx}`} className="col-12 col-sm-6 col-md-4">
+                  <DashboardWidget {...widget} />
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Dashboard cards */}
-          <div className="row g-4">
-            {widgets.map((widget, idx) => (
-              <div key={idx} className="col-12 col-sm-6 col-md-4">
-                <DashboardWidget {...widget} />
-              </div>
-            ))}
+          {/* Sidebar: Recently Viewed */}
+          <div className="col-12 col-lg-4">
+            <RecentlyViewedDoctors />
           </div>
-        </div>
-
-        {/* Sidebar: Recently Viewed */}
-        <div className="col-12 col-lg-4">
-          <RecentlyViewedDoctors />
         </div>
       </div>
     </div>

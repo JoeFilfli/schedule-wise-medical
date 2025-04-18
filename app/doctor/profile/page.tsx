@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import EditProfileForm from '@/components/EditProfileForm';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default async function DoctorProfile() {
   const session = await getServerSession(authOptions);
@@ -38,22 +39,26 @@ export default async function DoctorProfile() {
     : null;
 
   return (
-    <div className="container py-4 d-flex justify-content-center">
-      <div style={{ maxWidth: 600, width: '100%' }}>
-        <h1 className="text-center mb-4">My Profile</h1>
-
-        <div className="alert alert-info text-center fw-semibold fs-5 mb-4">
-          💰 Balance: ${user.balance.toFixed(2)}
+    <div className="content-page">
+      <PageHeader 
+        title="My Profile" 
+        subtitle={`Current balance: $${user.balance.toFixed(2)}`}
+        size="large"
+      />
+      
+      <div className="page-content">
+        <div className="d-flex justify-content-center">
+          <div style={{ maxWidth: 600, width: '100%' }}>
+            <EditProfileForm
+              user={{
+                ...user,
+                doctorProfile: user.doctorProfile || undefined,
+                profilePicture,
+              }}
+              isDoctor
+            />
+          </div>
         </div>
-
-        <EditProfileForm
-          user={{
-            ...user,
-            doctorProfile: user.doctorProfile || undefined,
-            profilePicture,
-          }}
-          isDoctor
-        />
       </div>
     </div>
   );

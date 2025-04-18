@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { format } from 'date-fns';
+import Card from '@/components/ui/Card';
 
 interface Doctor {
   firstName: string;
@@ -25,8 +26,11 @@ export default function UpcomingAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    
     const fetchAppointments = async () => {
       try {
         const response = await fetch('/api/appointments/upcoming');
@@ -34,7 +38,6 @@ export default function UpcomingAppointments() {
           throw new Error('Failed to fetch appointments');
         }
         const data = await response.json();
-        console.log('Fetched appointments:', data); // For debugging
         setAppointments(data);
       } catch (error) {
         console.error('Error fetching appointments:', error);
@@ -55,61 +58,67 @@ export default function UpcomingAppointments() {
     setCurrentIndex(prev => (prev < appointments.length - 1 ? prev + 1 : 0));
   };
 
+  if (!mounted) return null;
+
+  const renderActions = (
+    <div className="d-flex gap-2">
+      <button 
+        onClick={handlePrevious}
+        className="btn btn-light rounded-circle p-1"
+        style={{ width: '32px', height: '32px' }}
+        disabled={appointments.length <= 1}
+      >
+        <IconChevronLeft size={20} stroke={1.5} />
+      </button>
+      <button 
+        onClick={handleNext}
+        className="btn btn-light rounded-circle p-1"
+        style={{ width: '32px', height: '32px' }}
+        disabled={appointments.length <= 1}
+      >
+        <IconChevronRight size={20} stroke={1.5} />
+      </button>
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <div className="bg-white rounded-4 p-4 shadow-sm">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h5 className="mb-0 fw-bold">Upcoming Appointments</h5>
-        </div>
+      <Card 
+        title="Upcoming Appointments"
+        headerAction={renderActions}
+      >
         <div className="text-center py-4">Loading...</div>
-      </div>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white rounded-4 p-4 shadow-sm">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h5 className="mb-0 fw-bold">Upcoming Appointments</h5>
-        </div>
+      <Card 
+        title="Upcoming Appointments"
+        headerAction={renderActions}
+      >
         <div className="text-center py-4 text-danger">{error}</div>
-      </div>
+      </Card>
     );
   }
 
   if (appointments.length === 0) {
     return (
-      <div className="bg-white rounded-4 p-4 shadow-sm">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h5 className="mb-0 fw-bold">Upcoming Appointments</h5>
-        </div>
+      <Card 
+        title="Upcoming Appointments"
+        headerAction={renderActions}
+      >
         <div className="text-center py-4 text-muted">No upcoming appointments</div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white rounded-4 p-4 shadow-sm">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h5 className="mb-0 fw-bold">Upcoming Appointments</h5>
-        <div className="d-flex gap-2">
-          <button 
-            onClick={handlePrevious}
-            className="btn btn-light rounded-circle p-1"
-            style={{ width: '32px', height: '32px' }}
-          >
-            <IconChevronLeft size={20} stroke={1.5} />
-          </button>
-          <button 
-            onClick={handleNext}
-            className="btn btn-light rounded-circle p-1"
-            style={{ width: '32px', height: '32px' }}
-          >
-            <IconChevronRight size={20} stroke={1.5} />
-          </button>
-        </div>
-      </div>
-
+    <Card 
+      title="Upcoming Appointments"
+      headerAction={renderActions}
+    >
       <div className="d-flex gap-3 overflow-hidden">
         {appointments.map((appointment, index) => {
           // Try to get the appointment date from various possible fields
@@ -117,7 +126,6 @@ export default function UpcomingAppointments() {
           const date = new Date(dateString);
           const dayName = format(date, 'EEE');
           const dayNumber = format(date, 'd');
-          const time = format(date, 'h:mm a');
           
           return (
             <div 
@@ -133,14 +141,14 @@ export default function UpcomingAppointments() {
                 <div 
                   className="text-center p-3 rounded-4"
                   style={{
-                    backgroundColor: index === 0 ? '#EEF3FF' : '#E6FFE6',
+                    backgroundColor: index === 0 ? 'var(--primary-50)' : 'var(--accent-50)',
                     minWidth: '80px'
                   }}
                 >
                   <div 
                     className="mb-1"
                     style={{
-                      color: index === 0 ? '#2563EB' : '#22C55E',
+                      color: index === 0 ? 'var(--primary)' : 'var(--accent)',
                       fontSize: '14px'
                     }}
                   >
@@ -149,7 +157,7 @@ export default function UpcomingAppointments() {
                   <div 
                     className="fw-bold"
                     style={{
-                      color: index === 0 ? '#2563EB' : '#22C55E',
+                      color: index === 0 ? 'var(--primary)' : 'var(--accent)',
                       fontSize: '24px',
                       lineHeight: 1
                     }}
@@ -168,7 +176,7 @@ export default function UpcomingAppointments() {
                   <div 
                     className="px-2 py-1 rounded-2 d-inline-block"
                     style={{
-                      backgroundColor: index === 0 ? '#2563EB' : '#22C55E',
+                      backgroundColor: index === 0 ? 'var(--primary)' : 'var(--accent)',
                       color: 'white',
                       fontSize: '12px'
                     }}
@@ -181,6 +189,6 @@ export default function UpcomingAppointments() {
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 } 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { format, parseISO, isAfter } from 'date-fns'
 import { useRouter } from 'next/navigation'
+import PageHeader from '@/components/layout/PageHeader'
 
 interface Appointment {
   id: string
@@ -115,128 +116,130 @@ export default function AppointmentsPage() {
   )
 
   return (
-    <div className="container py-4">
-      <h3 className="mb-4">My Appointments</h3>
+    <div className="content-page">
+      <PageHeader title="My Appointments" />
+      
+      <div className="page-content">
+        {upcoming.length > 0 && (
+          <>
+            <h5>Upcoming</h5>
+            {renderList(upcoming)}
+          </>
+        )}
 
-      {upcoming.length > 0 && (
-        <>
-          <h5>Upcoming</h5>
-          {renderList(upcoming)}
-        </>
-      )}
+        {past.length > 0 && (
+          <>
+            <h5 className="mt-4">Past</h5>
+            {renderList(past)}
+          </>
+        )}
 
-      {past.length > 0 && (
-        <>
-          <h5 className="mt-4">Past</h5>
-          {renderList(past)}
-        </>
-      )}
+        {upcoming.length === 0 && past.length === 0 && (
+          <p>No appointments scheduled.</p>
+        )}
 
-      {upcoming.length === 0 && past.length === 0 && (
-        <p>No appointments scheduled.</p>
-      )}
-
-      {/* Details Modal */}
-      {selected && (
-        <div
-          className="modal fade show d-block"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="appt-detail-title"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-          onClick={e => { if (e.currentTarget === e.target) setSelected(null) }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 id="appt-detail-title" className="modal-title">
-                  Appointment Details
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close details"
-                  onClick={() => setSelected(null)}
-                />
-              </div>
-              <div className="modal-body">
-                <p>
-                  <strong>Doctor:</strong>{' '}
-                  {selected.slot
-                    ? `${selected.slot.doctor.firstName} ${selected.slot.doctor.lastName}`
-                    : selected.doctorName}
-                </p>
-                <p>
-                  <strong>When:</strong><br/>
-                  {format(selected.startDate, 'PPPP p')} →{' '}
-                  {selected.slot?.endTime
-                    ? format(parseISO(selected.slot.endTime), 'p')
-                    : format(selected.startDate, 'p')}
-                </p>
-                {selected.type && (
+        {/* Details Modal */}
+        {selected && (
+          <div
+            className="modal fade show d-block"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="appt-detail-title"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            onClick={e => { if (e.currentTarget === e.target) setSelected(null) }}
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 id="appt-detail-title" className="modal-title">
+                    Appointment Details
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close details"
+                    onClick={() => setSelected(null)}
+                  />
+                </div>
+                <div className="modal-body">
                   <p>
-                    <strong>Type:</strong>{' '}
-                    {selected.type === 'new' ? 'New Problem' : 'Follow‑Up'}
+                    <strong>Doctor:</strong>{' '}
+                    {selected.slot
+                      ? `${selected.slot.doctor.firstName} ${selected.slot.doctor.lastName}`
+                      : selected.doctorName}
                   </p>
-                )}
-                {selected.notes && (
-                  <p><strong>Note:</strong> {selected.notes}</p>
-                )}
-                {selected.review && (
-                  <p><strong>Review:</strong> {selected.review}</p>
-                )}
-                <p><strong>Status:</strong> {selected.status}</p>
-                {selected.reason && (
-                  <p><strong>Reason:</strong> {selected.reason}</p>
-                )}
-              </div>
-              <div className="modal-footer">
-                {selected.status === 'SCHEDULED' && selected.slot && (
+                  <p>
+                    <strong>When:</strong><br/>
+                    {format(selected.startDate, 'PPPP p')} →{' '}
+                    {selected.slot?.endTime
+                      ? format(parseISO(selected.slot.endTime), 'p')
+                      : format(selected.startDate, 'p')}
+                  </p>
+                  {selected.type && (
+                    <p>
+                      <strong>Type:</strong>{' '}
+                      {selected.type === 'new' ? 'New Problem' : 'Follow‑Up'}
+                    </p>
+                  )}
+                  {selected.notes && (
+                    <p><strong>Note:</strong> {selected.notes}</p>
+                  )}
+                  {selected.review && (
+                    <p><strong>Review:</strong> {selected.review}</p>
+                  )}
+                  <p><strong>Status:</strong> {selected.status}</p>
+                  {selected.reason && (
+                    <p><strong>Reason:</strong> {selected.reason}</p>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  {selected.status === 'SCHEDULED' && selected.slot && (
+                    <button
+                      className="btn btn-primary"
+                      onClick={() =>
+                        router.push(
+                          `/patient/doctors/${selected.slot!.doctor.id}?reschedule=${selected.id}`
+                        )
+                      }
+                    >
+                      Reschedule
+                    </button>
+                  )}
+                  {selected.status === 'SCHEDULED' && (
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => cancelAppointment(selected.id)}
+                    >
+                      Cancel
+                    </button>
+                  )}
                   <button
-                    className="btn btn-primary"
-                    onClick={() =>
-                      router.push(
-                        `/patient/doctors/${selected.slot!.doctor.id}?reschedule=${selected.id}`
-                      )
-                    }
+                    className="btn btn-secondary"
+                    onClick={() => setSelected(null)}
                   >
-                    Reschedule
+                    Close
                   </button>
-                )}
-                {selected.status === 'SCHEDULED' && (
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => cancelAppointment(selected.id)}
-                  >
-                    Cancel
-                  </button>
-                )}
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setSelected(null)}
-                >
-                  Close
-                </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Clickable styles */}
-      <style jsx global>{`
-        .clickable-item {
-          cursor: pointer;
-          transition: background-color 0.2s, transform 0.1s;
-        }
-        .clickable-item:hover {
-          background-color: #e7f3ff; /* light blue */
-          transform: translateY(-1px);
-        }
-        .clickable-item:active {
-          background-color: #d0e7ff;
-        }
-      `}</style>
+        {/* Clickable styles */}
+        <style jsx global>{`
+          .clickable-item {
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+          }
+          .clickable-item:hover {
+            background-color: #e7f3ff; /* light blue */
+            transform: translateY(-1px);
+          }
+          .clickable-item:active {
+            background-color: #d0e7ff;
+          }
+        `}</style>
+      </div>
     </div>
   )
 }

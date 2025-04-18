@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRecentlyViewed } from '@/context/RecentlyViewedContext';
+import Card from '@/components/ui/Card';
+import { useState, useEffect } from 'react';
 
 interface Doctor {
   id: string;
@@ -15,16 +17,23 @@ interface Doctor {
 }
 
 const specialtyColors: { [key: string]: { bg: string, text: string } } = {
-  'Ophthalmologist': { bg: '#FFE6E6', text: '#FF69B4' },
-  'General Practitioner (GP)': { bg: '#E6E6FF', text: '#4169E1' },
-  'Hepatologist': { bg: '#E6FFF9', text: '#20B2AA' },
-  'Rheumatologist': { bg: '#FFE6F0', text: '#FF1493' },
-  'default': { bg: '#E6E6E6', text: '#666666' }
+  'Ophthalmologist': { bg: 'var(--primary-50)', text: 'var(--primary-600)' },
+  'General Practitioner (GP)': { bg: 'var(--secondary-50)', text: 'var(--secondary-600)' },
+  'Hepatologist': { bg: 'var(--accent-50)', text: 'var(--accent-600)' },
+  'Rheumatologist': { bg: 'var(--primary-100)', text: 'var(--primary-700)' },
+  'default': { bg: 'var(--neutral-100)', text: 'var(--neutral-600)' }
 };
 
 export default function RecentlyViewedDoctors() {
   const { recentDoctors, clearRecentDoctors } = useRecentlyViewed();
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+  
   if (recentDoctors.length === 0) {
     return null;
   }
@@ -37,15 +46,21 @@ export default function RecentlyViewedDoctors() {
     return specialtyColors[specialty] || specialtyColors.default;
   };
 
+  const headerAction = recentDoctors.length > 0 ? (
+    <button 
+      onClick={clearRecentDoctors}
+      className="btn btn-sm btn-outline-secondary"
+    >
+      Clear
+    </button>
+  ) : null;
+
   return (
-    <div className="bg-white rounded-4 p-4 shadow-sm">
-      <div className="d-flex justify-content-between align-items-start mb-2">
-        <div>
-          <h5 className="mb-1 fw-bold">Recent Viewed</h5>
-          <h6 className="text-dark mb-4">Doctor Profiles</h6>
-        </div>
-      </div>
-      
+    <Card
+      title="Recently Viewed"
+      subtitle="Doctor Profiles"
+      headerAction={headerAction}
+    >
       <div className="d-flex flex-column gap-4">
         {recentDoctors.map((doctor) => {
           const initials = getInitials(doctor.firstName, doctor.lastName);
@@ -97,6 +112,6 @@ export default function RecentlyViewedDoctors() {
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 } 

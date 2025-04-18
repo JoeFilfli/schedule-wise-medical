@@ -6,6 +6,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { EventInput } from '@fullcalendar/core';
+import PageHeader from '@/components/layout/PageHeader';
 import './calendar.css';
 
 interface Appointment {
@@ -79,7 +80,7 @@ export default function CalendarPage() {
     }
 
     return (
-      <div className="bg-white rounded overflow-hidden">
+      <div className="calendar-container shadow rounded bg-white">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="timeGridDay"
@@ -93,7 +94,7 @@ export default function CalendarPage() {
           slotMinTime="08:00:00"
           slotMaxTime="20:00:00"
           allDaySlot={false}
-          height="calc(100vh - 200px)"
+          height="auto"
           expandRows={true}
           stickyHeaderDates={true}
           dayMaxEvents={true}
@@ -174,11 +175,15 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="h-100">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h3 mb-0">My Calendar</h1>
+    <div className="content-page calendar-page-container">
+      <PageHeader 
+        title="My Calendar" 
+        subtitle="Track and manage your upcoming appointments"
+        size="large"
+      />
+      <div className="calendar-scrollable-area">
+        {renderContent()}
       </div>
-      {renderContent()}
     </div>
   );
 } 

@@ -1,23 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base colors */
+  --primary-50: #e6f5ff;
+  --primary-100: #cceaff;
+  --primary-200: #99d5ff;
+  --primary-300: #66bfff;
+  --primary-400: #33aaff;
+  --primary-500: #0095ff;
+  --primary-600: #0076cc;
+  --primary-700: #005899;
+  --primary-800: #003b66;
+  --primary-900: #001d33;
+  
+  /* Accent colors - Teal */
+  --accent-50: #e6fff7;
+  --accent-100: #ccffee;
+  --accent-200: #99ffde;
+  --accent-300: #66ffcd;
+  --accent-400: #33ffbd;
+  --accent-500: #00ffac;
+  --accent-600: #00cc8a;
+  --accent-700: #009967;
+  --accent-800: #006645;
+  --accent-900: #003322;
+
+  /* Neutral colors */
+  --neutral-50: #f9fafb;
+  --neutral-100: #f3f4f6;
+  --neutral-200: #e5e7eb;
+  --neutral-300: #d1d5db;
+  --neutral-400: #9ca3af;
+  --neutral-500: #6b7280;
+  --neutral-600: #4b5563;
+  --neutral-700: #374151;
+  --neutral-800: #1f2937;
+  --neutral-900: #111827;
+
+  /* Success, warning, error colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+
+  /* Light theme variables */
+  --background: var(--neutral-50);
+  --foreground: var(--neutral-900);
+  --muted: var(--neutral-100);
+  --muted-foreground: var(--neutral-600);
+  --border: var(--neutral-200);
+  --input: var(--neutral-300);
+  --ring: var(--primary-500);
+  
+  --primary: var(--primary-600);
+  --primary-foreground: white;
+  
+  --secondary: var(--accent-600);
+  --secondary-foreground: white;
+  
+  --accent: var(--accent-500);
+  --accent-foreground: var(--neutral-900);
+  
+  --card: white;
+  --card-foreground: var(--neutral-900);
+
+  --radius: 0.5rem;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Montserrat', 'Inter', system-ui, sans-serif;
 }
 
-html {
-  color-scheme: light;
+.dark {
+  /* Dark theme variables - softer, more professional */
+  --background: #1a1f2b;
+  --foreground: #f8fafc;
+  --muted: #2c3545;
+  --muted-foreground: #cbd5e1;
+  --border: #374151;
+  --input: #374151;
+  --ring: var(--primary-400);
+  
+  --primary: var(--primary-400);
+  --primary-foreground: white;
+  
+  --secondary: var(--accent-400);
+  --secondary-foreground: var(--neutral-900);
+  
+  --accent: var(--accent-500);
+  --accent-foreground: var(--neutral-900);
+  
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
 }
-
 
 html, body {
-  height: 90%;
+  color-scheme: light dark;
+  height: 100%;
+  overflow: hidden; /* Disable global scrolling */
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  height: 100%;
 }
 
 * {
@@ -26,7 +116,522 @@ body {
   margin: 0;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+  color: var(--foreground);
+}
+
+h1 {
+  font-size: 2.25rem;
+}
+
+h2 {
+  font-size: 1.875rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+h4 {
+  font-size: 1.25rem;
+}
+
+h5 {
+  font-size: 1.125rem;
+}
+
+h6 {
+  font-size: 1rem;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
 a {
-  color: inherit;
+  color: var(--primary);
   text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--primary-700);
+  text-decoration: underline;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Bootstrap overrides */
+.btn-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-700) !important;
+  border-color: var(--primary-700) !important;
+}
+
+.btn-secondary {
+  background-color: var(--secondary) !important;
+  border-color: var(--secondary) !important;
+}
+
+.btn-secondary:hover {
+  background-color: var(--accent-700) !important;
+  border-color: var(--accent-700) !important;
+}
+
+.form-control:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 0.25rem rgba(0, 149, 255, 0.25) !important;
+}
+
+/* Dark mode specific overrides */
+.dark .bg-white {
+  background-color: var(--card) !important;
+}
+
+.dark .bg-light {
+  background-color: var(--muted) !important;
+}
+
+.dark .text-muted {
+  color: #a3b1c9 !important;
+}
+
+.dark .border-bottom,
+.dark .border-top,
+.dark .border-end,
+.dark .border {
+  border-color: var(--border) !important;
+}
+
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .btn-outline-secondary {
+  color: #cbd5e1;
+  border-color: #4b5563;
+}
+
+.dark .btn-outline-secondary:hover {
+  background-color: #4b5563;
+  color: white;
+}
+
+.dark .badge {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .nav-link.active {
+  background-color: var(--primary) !important;
+  color: white !important;
+}
+
+.dark .nav-link {
+  color: var(--muted-foreground);
+}
+
+.dark .nav-link:hover:not(.active) {
+  color: var(--foreground);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .form-control {
+  background-color: var(--muted);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.dark .form-control:focus {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.dark .form-label {
+  color: var(--foreground);
+}
+
+.dark .modal-content {
+  background-color: var(--card);
+  border-color: var(--border);
+}
+
+.dark .modal-header,
+.dark .modal-footer {
+  border-color: var(--border);
+}
+
+.dark .dropdown-menu {
+  background-color: var(--card);
+  border-color: var(--border);
+}
+
+.dark .dropdown-item {
+  color: var(--foreground);
+}
+
+.dark .dropdown-item:hover {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.dark .hover-shadow:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Animation utilities */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Utility classes */
+.hover-text-primary:hover {
+  color: var(--primary) !important;
+}
+
+.hover-shadow:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Add more comprehensive scrolling rules */
+
+/* Prevent global scrolling */
+html, body {
+  height: 100%;
+  overflow: hidden; /* Disable global scrolling */
+}
+
+/* Standard scrollable content container */
+.scrollable-content {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+/* Main content area scrolling */
+main.flex-grow-1.p-3.overflow-auto {
+  height: calc(100vh - 56px);
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  position: relative;
+  scrollbar-width: thin;
+}
+
+/* Components that should scroll internally */
+.scrollable-component {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+/* Fixed height containers with scrolling */
+.fixed-height-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+/* Modal scrolling */
+.modal-body {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Handle horizontal scrolling needs (like tables) */
+.horizontal-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* After the existing scrolling rules, add calendar-specific rules */
+
+/* Calendar-specific styling */
+.calendar-page-container {
+  height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.calendar-scrollable-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.75rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.calendar-scrollable-area > * {
+  width: 100%;
+  max-width: 1200px;
+}
+
+.fc-scroller {
+  height: auto !important;
+}
+
+.fc-view-harness {
+  height: auto !important;
+}
+
+/* When FullCalendar needs horizontal scrolling */
+.fc-scrollgrid-section-body {
+  overflow: auto !important;
+}
+
+@media (max-width: 768px) {
+  .fc-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* After the existing rules, add consistent spacing rules */
+
+/* Consistent layout spacing across all pages and zoom levels */
+.app-container {
+  --page-padding-x: 1.5rem;
+  --page-padding-y: 1.5rem;
+  --content-max-width: 1600px;
+  
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--page-padding-y) var(--page-padding-x);
+}
+
+/* Ensure consistent main content area */
+main.flex-grow-1.p-3.overflow-auto {
+  padding: var(--page-padding-y) var(--page-padding-x) !important;
+  height: calc(100vh - 56px);
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  position: relative;
+  scrollbar-width: thin;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+/* Apply consistent spacing to all content pages */
+.content-page {
+  padding-top: 0;
+  margin-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Consistent content container */
+.content-container {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Page header styling for consistency */
+.page-header {
+  margin-top: 0;
+  padding: 1rem 2rem;
+  background-color: var(--primary-50);
+  border-bottom: 1px solid var(--primary-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  width: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.page-header-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header h1,
+.page-header h2,
+.page-header h3,
+.page-header h4 {
+  margin-bottom: 0;
+  color: var(--primary-800);
+  font-weight: 600;
+}
+
+.subtitle-text {
+  font-size: 1rem;
+  color: var(--primary-600);
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Dark mode header styling */
+.dark .page-header {
+  background-color: var(--primary-900);
+  border-bottom-color: var(--primary-800);
+}
+
+.dark .page-header h1,
+.dark .page-header h2,
+.dark .page-header h3,
+.dark .page-header h4 {
+  color: var(--primary-100);
+}
+
+.dark .subtitle-text {
+  color: var(--primary-300);
+  opacity: 0.9;
+}
+
+/* Page content area */
+.page-content {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Inside page-content, allow child elements to take full width */
+.page-content > * {
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Calendar-specific styling */
+.calendar-page-container {
+  height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.calendar-scrollable-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.75rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.calendar-scrollable-area > * {
+  width: 100%;
+  max-width: 1200px;
+}
+
+.calendar-header {
+  padding: 1rem 1.5rem;
+  background-color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.fc-scroller {
+  height: auto !important;
+  max-height: calc(100vh - 180px) !important;
+}
+
+.fc-view-harness {
+  height: auto !important;
+  min-height: 500px !important;
+}
+
+/* When FullCalendar needs horizontal scrolling */
+.fc-scrollgrid-section-body {
+  overflow: auto !important;
+}
+
+/* Adjustments for different zoom levels */
+@media screen and (max-width: 1280px) {
+  :root {
+    --page-padding-x: 1.25rem;
+    --page-padding-y: 1.25rem;
+  }
+}
+
+@media screen and (max-width: 992px) {
+  :root {
+    --page-padding-x: 1rem;
+    --page-padding-y: 1rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  :root {
+    --page-padding-x: 0.75rem;
+    --page-padding-y: 0.75rem;
+  }
 }

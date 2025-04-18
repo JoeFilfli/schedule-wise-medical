@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import EditProfileForm from '@/components/EditProfileForm';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default async function PatientProfile() {
   const session = await getServerSession(authOptions);
@@ -16,6 +17,7 @@ export default async function PatientProfile() {
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
     select: {
+      id:            true,
       firstName:      true,
       lastName:       true,
       email:          true,
@@ -35,27 +37,25 @@ export default async function PatientProfile() {
     : null;
 
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-center">
-        <div style={{ maxWidth: 500, width: '100%' }}>
-          <h1 className="text-center mb-4">My Profile</h1>
-
-          
-          {/* Edit form for other fields */}
-          <EditProfileForm
-            user={{
-              firstName:      user.firstName,
-              lastName:       user.lastName,
-              email:          user.email,
-              phoneNumber:    user.phoneNumber,
-              profilePicture,
-            }}
-          />
-
-          
-          
+    <div className="content-page">
+      <PageHeader title="My Profile" />
+      
+      <div className="page-content">
+        <div className="d-flex justify-content-center">
+          <div style={{ maxWidth: 500, width: '100%' }}>
+            {/* Edit form for other fields */}
+            <EditProfileForm
+              user={{
+                id:             user.id,
+                firstName:      user.firstName,
+                lastName:       user.lastName,
+                email:          user.email,
+                phoneNumber:    user.phoneNumber,
+                profilePicture,
+              }}
+            />
+          </div>
         </div>
-        
       </div>
     </div>
   );

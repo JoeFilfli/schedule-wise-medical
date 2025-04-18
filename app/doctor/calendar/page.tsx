@@ -12,6 +12,7 @@ import {
   setMinutes,
   parseISO,
 } from 'date-fns'
+import PageHeader from '@/components/layout/PageHeader'
 
 interface Slot {
   id: string
@@ -150,7 +151,7 @@ export default function CalendarPage() {
     const result = await res.json()
     if (res.ok && result.success) {
       await fetchSlots()
-      alert('Copied last week’s slots!')
+      alert("Copied last week's slots!")
     } else {
       alert(result.message || 'Failed to copy previous week.')
     }
@@ -168,242 +169,245 @@ export default function CalendarPage() {
   if (!isClient) return null
 
   return (
-    <div className="container py-4">
-      <h2 className="mb-3">Weekly Calendar</h2>
-
-      {/* Controls */}
-      <div className="d-flex justify-content-between mb-3">
-        <div>
-          <button onClick={goPreviousWeek} className="btn btn-outline-primary me-2">⬅️ Previous</button>
-          <button onClick={goNextWeek}     className="btn btn-outline-primary">Next ➡️</button>
+    <div className="content-page calendar-page-container">
+      <PageHeader 
+        title="Weekly Calendar" 
+        subtitle="Manage your appointment slots"
+        size="large"
+      >
+        <div className="d-flex gap-2">
+          <button onClick={goPreviousWeek} className="btn btn-outline-primary btn-sm">⬅️ Previous</button>
+          <button onClick={goNextWeek} className="btn btn-outline-primary btn-sm">Next ➡️</button>
+          <button className="btn btn-secondary btn-sm" onClick={copyPreviousWeekToThisWeek}>
+            ↻ Copy Previous Week
+          </button>
         </div>
-        <button className="btn btn-secondary" onClick={copyPreviousWeekToThisWeek}>
-          ↻ Copy Previous Week
-        </button>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="table-responsive border">
-        <table className="table table-bordered text-center align-middle mb-0">
-          <thead className="table-light">
-            <tr>
-              <th style={{ width:'100px' }}>Time</th>
-              {weekDays.map((day, idx) => {
-                const today = isSameDay(day,new Date())
-                return (
-                  <th
-                    key={idx}
-                    className={today?'bg-info text-white fw-bold':''}
-                    style={{ cursor:'pointer' }}
-                    onClick={()=>setSelectedDate(day)}
-                  >
-                    <div>{format(day,'EEE dd')}</div>
-                    {today && <small>Today</small>}
-                  </th>
-                )
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {hours.map(hour=>(
-              <tr key={hour}>
-                <td className="bg-light fw-semibold">
-                  {format(setHours(setMinutes(new Date(),0),hour),'HH:mm')}
-                </td>
-                {weekDays.map((day,col)=>(
-                  <td key={col} className="p-1">
-                    {getSlotsForHour(day,hour).map(slot=>{
-                      const st = slot.appointment?.status
-                      let bg='bg-info-subtle', txt=''
-                      if (st==='SCHEDULED'){ bg='bg-success'; txt='text-white' }
-                      if (st==='COMPLETED'){ bg='bg-secondary'; txt='text-white' }
-                      if (st==='NO_SHOW')  { bg='bg-warning';  txt='text-dark'  }
-                      if (st==='CANCELLED'){ bg='bg-danger';   txt='text-white' }
-                      return (
-                        <div
-                          key={slot.id}
-                          className={`border rounded p-1 mb-1 small ${bg} ${txt}`}
-                          style={{ cursor:'pointer' }}
-                          onClick={()=>setActiveSlot(slot)}
-                        >
-                          {format(parseISO(slot.startTime),'HH:mm')}–{format(parseISO(slot.endTime),'HH:mm')}
-                        </div>
-                      )
-                    })}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Slot Details Modal */}
-      {activeSlot && (
-        <div className="modal fade show d-block" style={{ backgroundColor:'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-
-              <div className="modal-header">
-                <h5 className="modal-title">Slot Details</h5>
-                <button className="btn-close" onClick={()=>setActiveSlot(null)} />
-              </div>
-
-              <div className="modal-body">
-                <p>
-                  <strong>Time:</strong>{' '}
-                  {format(parseISO(activeSlot.startTime),'HH:mm')}–{format(parseISO(activeSlot.endTime),'HH:mm')}
-                </p>
-
-                {activeSlot.appointment ? (
-                  <>
-                    <p><strong>Status:</strong> {activeSlot.appointment.status}</p>
-                    <p><strong>Patient:</strong> {activeSlot.appointment.patient.firstName} {activeSlot.appointment.patient.lastName}</p>
-                    <p><strong>Type:</strong> {activeSlot.appointment.type||'—'}</p>
-                    <p><strong>Note:</strong> {activeSlot.appointment.notes||'—'}</p>
-
-                    <div className="mb-3">
-                      <label className="form-label">Price ($)</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={price}
-                        onChange={e=>setPrice(Number(e.target.value))}
-                        min={0}
-                      />
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label">Doctor’s Review</label>
-                      <textarea
-                        rows={3}
-                        className="form-control"
-                        value={review}
-                        onChange={e=>setReview(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label">Mark As</label>
-                      <select
-                        className="form-select"
-                        value={newStatus}
-                        onChange={e=>setNewStatus(e.target.value as any)}
-                      >
-                        <option value="COMPLETED">Completed</option>
-                        <option value="NO_SHOW">No‑Show</option>
-                        <option value="CANCELLED">Cancelled</option>
-                      </select>
-                    </div>
-
-                    <button
-                      className="btn btn-primary w-100 mb-2"
-                      onClick={handleCompleteAppointment}
-                      disabled={updating}
+      </PageHeader>
+      
+      <div className="calendar-scrollable-area">
+        {/* Calendar Grid */}
+        <div className="table-responsive border">
+          <table className="table table-bordered text-center align-middle mb-0">
+            <thead className="table-light">
+              <tr>
+                <th style={{ width:'100px' }}>Time</th>
+                {weekDays.map((day, idx) => {
+                  const today = isSameDay(day,new Date())
+                  return (
+                    <th
+                      key={idx}
+                      className={today?'bg-info text-white fw-bold':''}
+                      style={{ cursor:'pointer' }}
+                      onClick={()=>setSelectedDate(day)}
                     >
-                      {updating?'Saving…':'Submit & Close'}
-                    </button>
+                      <div>{format(day,'EEE dd')}</div>
+                      {today && <small>Today</small>}
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {hours.map(hour=>(
+                <tr key={hour}>
+                  <td className="bg-light fw-semibold">
+                    {format(setHours(setMinutes(new Date(),0),hour),'HH:mm')}
+                  </td>
+                  {weekDays.map((day,col)=>(
+                    <td key={col} className="p-1">
+                      {getSlotsForHour(day,hour).map(slot=>{
+                        const st = slot.appointment?.status
+                        let bg='bg-info-subtle', txt=''
+                        if (st==='SCHEDULED'){ bg='bg-success'; txt='text-white' }
+                        if (st==='COMPLETED'){ bg='bg-secondary'; txt='text-white' }
+                        if (st==='NO_SHOW')  { bg='bg-warning';  txt='text-dark'  }
+                        if (st==='CANCELLED'){ bg='bg-danger';   txt='text-white' }
+                        return (
+                          <div
+                            key={slot.id}
+                            className={`border rounded p-1 mb-1 small ${bg} ${txt}`}
+                            style={{ cursor:'pointer' }}
+                            onClick={()=>setActiveSlot(slot)}
+                          >
+                            {format(parseISO(slot.startTime),'HH:mm')}–{format(parseISO(slot.endTime),'HH:mm')}
+                          </div>
+                        )
+                      })}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
+        {/* Slot Details Modal */}
+        {activeSlot && (
+          <div className="modal fade show d-block" style={{ backgroundColor:'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+
+                <div className="modal-header">
+                  <h5 className="modal-title">Slot Details</h5>
+                  <button className="btn-close" onClick={()=>setActiveSlot(null)} />
+                </div>
+
+                <div className="modal-body">
+                  <p>
+                    <strong>Time:</strong>{' '}
+                    {format(parseISO(activeSlot.startTime),'HH:mm')}–{format(parseISO(activeSlot.endTime),'HH:mm')}
+                  </p>
+
+                  {activeSlot.appointment ? (
+                    <>
+                      <p><strong>Status:</strong> {activeSlot.appointment.status}</p>
+                      <p><strong>Patient:</strong> {activeSlot.appointment.patient.firstName} {activeSlot.appointment.patient.lastName}</p>
+                      <p><strong>Type:</strong> {activeSlot.appointment.type||'—'}</p>
+                      <p><strong>Note:</strong> {activeSlot.appointment.notes||'—'}</p>
+
+                      <div className="mb-3">
+                        <label className="form-label">Price ($)</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={price}
+                          onChange={e=>setPrice(Number(e.target.value))}
+                          min={0}
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Doctor's Review</label>
+                        <textarea
+                          rows={3}
+                          className="form-control"
+                          value={review}
+                          onChange={e=>setReview(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Mark As</label>
+                        <select
+                          className="form-select"
+                          value={newStatus}
+                          onChange={e=>setNewStatus(e.target.value as any)}
+                        >
+                          <option value="COMPLETED">Completed</option>
+                          <option value="NO_SHOW">No‑Show</option>
+                          <option value="CANCELLED">Cancelled</option>
+                        </select>
+                      </div>
+
+                      <button
+                        className="btn btn-primary w-100 mb-2"
+                        onClick={handleCompleteAppointment}
+                        disabled={updating}
+                      >
+                        {updating?'Saving…':'Submit & Close'}
+                      </button>
+
+                      <button
+                        className="btn btn-outline-danger w-100"
+                        onClick={()=>deleteSlot(activeSlot.id)}
+                      >
+                        ❌ Cancel Slot & Notify
+                      </button>
+                    </>
+                  ) : (
                     <button
                       className="btn btn-outline-danger w-100"
                       onClick={()=>deleteSlot(activeSlot.id)}
                     >
-                      ❌ Cancel Slot & Notify
+                      ❌ Delete Slot
                     </button>
-                  </>
-                ) : (
-                  <button
-                    className="btn btn-outline-danger w-100"
-                    onClick={()=>deleteSlot(activeSlot.id)}
-                  >
-                    ❌ Delete Slot
-                  </button>
-                )}
-              </div>
-
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={()=>setActiveSlot(null)}>
-                  Close
-                </button>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Generate Slots Modal */}
-      {selectedDate && (
-        <div className="modal fade show d-block" style={{ backgroundColor:'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-
-              <div className="modal-header">
-                <h5 className="modal-title">Generate Slots: {format(selectedDate,'EEEE, MMM d')}</h5>
-                <button className="btn-close" onClick={()=>setSelectedDate(null)} />
-              </div>
-
-              <div className="modal-body">
-                <div className="mb-2">
-                  <label className="form-label">Start Time</label>
-                  <input
-                    type="time"
-                    className="form-control"
-                    value={start}
-                    onChange={e=>setStart(e.target.value)}
-                  />
+                  )}
                 </div>
-                <div className="mb-2">
-                  <label className="form-label">End Time</label>
-                  <input
-                    type="time"
-                    className="form-control"
-                    value={end}
-                    onChange={e=>setEnd(e.target.value)}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Slot Length (minutes)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={length}
-                    onChange={e=>setLength(+e.target.value)}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Break Between Slots (minutes)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={breakTime}
-                    onChange={e=>setBreakTime(+e.target.value)}
-                  />
-                </div>
-                <div className="alert alert-warning d-flex justify-content-between align-items-center">
-                  <div>Need to clear this day's slots?</div>
-                  <button
-                    onClick={()=>deleteSlotsForDay(selectedDate)}
-                    className="btn btn-sm btn-outline-danger"
-                  >
-                    Delete All Slots
+
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={()=>setActiveSlot(null)}>
+                    Close
                   </button>
                 </div>
-              </div>
 
-              <div className="modal-footer">
-                <button onClick={generateSlots} className="btn btn-primary">
-                  Generate
-                </button>
-                <button onClick={()=>setSelectedDate(null)} className="btn btn-secondary">
-                  Cancel
-                </button>
               </div>
-
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Generate Slots Modal */}
+        {selectedDate && (
+          <div className="modal fade show d-block" style={{ backgroundColor:'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+
+                <div className="modal-header">
+                  <h5 className="modal-title">Generate Slots: {format(selectedDate,'EEEE, MMM d')}</h5>
+                  <button className="btn-close" onClick={()=>setSelectedDate(null)} />
+                </div>
+
+                <div className="modal-body">
+                  <div className="mb-2">
+                    <label className="form-label">Start Time</label>
+                    <input
+                      type="time"
+                      className="form-control"
+                      value={start}
+                      onChange={e=>setStart(e.target.value)}
+                    />
+                  </div>
+                  <div className="mb-2">
+                    <label className="form-label">End Time</label>
+                    <input
+                      type="time"
+                      className="form-control"
+                      value={end}
+                      onChange={e=>setEnd(e.target.value)}
+                    />
+                  </div>
+                  <div className="mb-2">
+                    <label className="form-label">Slot Length (minutes)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={length}
+                      onChange={e=>setLength(+e.target.value)}
+                    />
+                  </div>
+                  <div className="mb-2">
+                    <label className="form-label">Break Between Slots (minutes)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={breakTime}
+                      onChange={e=>setBreakTime(+e.target.value)}
+                    />
+                  </div>
+                  <div className="alert alert-warning d-flex justify-content-between align-items-center">
+                    <div>Need to clear this day's slots?</div>
+                    <button
+                      onClick={()=>deleteSlotsForDay(selectedDate)}
+                      className="btn btn-sm btn-outline-danger"
+                    >
+                      Delete All Slots
+                    </button>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button onClick={generateSlots} className="btn btn-primary">
+                    Generate
+                  </button>
+                  <button onClick={()=>setSelectedDate(null)} className="btn btn-secondary">
+                    Cancel
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

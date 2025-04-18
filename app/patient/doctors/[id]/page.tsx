@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import Image from 'next/image';
+import PageHeader from '@/components/layout/PageHeader';
 
 import FullCalendar from '@fullcalendar/react';
 import type { EventInput, EventClickArg } from '@fullcalendar/core';
@@ -145,129 +146,129 @@ export default function DoctorSlotsPage() {
   }
 
   return (
-    <div className="container py-4">
-      {/* Doctor’s Calendar Title & Photo */}
+    <div className="content-page calendar-page-container">
       {doctor && (
-        <div className="d-flex align-items-center mb-4">
-          <Image
-            src={doctor.profilePicture || '/default-avatar.png'}
-            alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
-            width={80} height={80}
-            className="rounded-circle border me-3"
-          />
-          <h4 className="mb-0">
-            Dr. {doctor.firstName} {doctor.lastName}’s Calendar
-          </h4>
-        </div>
+        <PageHeader title={`Dr. ${doctor.firstName} ${doctor.lastName}'s Calendar`}>
+          <div className="d-flex align-items-center gap-2">
+            <Image
+              src={doctor.profilePicture || '/default-avatar.png'}
+              alt={`Dr. ${doctor.firstName} ${doctor.lastName}`}
+              width={40} height={40}
+              className="rounded-circle border"
+            />
+          </div>
+        </PageHeader>
       )}
+      
+      <div className="calendar-scrollable-area">
+        {/* Light-red warning banner */}
+        {oldSlot && (
+          <div className="alert mb-3 old-banner">
+            <strong>Your Current Booking:</strong><br/>
+            {format(parseISO(oldSlot.startTime), 'PPpp')} → {format(parseISO(oldSlot.endTime), 'p')}
+          </div>
+        )}
 
-      {/* Light-red warning banner */}
-      {oldSlot && (
-        <div className="alert mb-3 old-banner">
-          <strong>Your Current Booking:</strong><br/>
-          {format(parseISO(oldSlot.startTime), 'PPpp')} → {format(parseISO(oldSlot.endTime), 'p')}
-        </div>
-      )}
+        {/* Calendar */}
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView="timeGridWeek"
+          headerToolbar={{
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+          }}
+          slotMinTime="08:00:00"
+          slotMaxTime="19:00:00"
+          allDaySlot={false}
+          navLinks
+          events={events}
+          eventClick={handleEventClick}
+          height="auto"
+        />
 
-      {/* Calendar */}
-      <FullCalendar
-        ref={calendarRef}
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="timeGridWeek"
-        headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        }}
-        slotMinTime="08:00:00"
-        slotMaxTime="19:00:00"
-        allDaySlot={false}
-        navLinks
-        events={events}
-        eventClick={handleEventClick}
-        height="auto"
-      />
-
-      {/* Booking Modal */}
-      {selectedSlot && (
-        <div
-          className="modal fade show d-block"
-          tabIndex={-1}
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-          role="dialog"
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirm Appointment</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setSelectedSlot(null)}
-                />
-              </div>
-              <div className="modal-body">
-                <p>
-                  <strong>Time:</strong><br/>
-                  {format(parseISO(selectedSlot.startTime), 'PPpp')} →{' '}
-                  {format(parseISO(selectedSlot.endTime), 'p')}
-                </p>
-                <fieldset className="mb-3">
-                  <legend>Type</legend>
-                  <div className="form-check">
-                    <input
-                      id="type-new"
-                      name="type"
-                      type="radio"
-                      className="form-check-input"
-                      value="new"
-                      onChange={e => setAppointmentType(e.target.value)}
-                    />
-                    <label htmlFor="type-new" className="form-check-label">
-                      New Problem
-                    </label>
-                  </div>
-                  <div className="form-check">
-                    <input
-                      id="type-follow"
-                      name="type"
-                      type="radio"
-                      className="form-check-input"
-                      value="follow-up"
-                      onChange={e => setAppointmentType(e.target.value)}
-                    />
-                    <label htmlFor="type-follow" className="form-check-label">
-                      Follow‑Up
-                    </label>
-                  </div>
-                </fieldset>
-                <textarea
-                  className="form-control mb-3"
-                  rows={3}
-                  placeholder="Optional note…"
-                  value={note}
-                  onChange={e => setNote(e.target.value)}
-                />
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setSelectedSlot(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={bookSlot}
-                  disabled={!appointmentType || loading}
-                >
-                  {loading ? 'Booking…' : 'Confirm'}
-                </button>
+        {/* Booking Modal */}
+        {selectedSlot && (
+          <div
+            className="modal fade show d-block"
+            tabIndex={-1}
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            role="dialog"
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Confirm Appointment</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setSelectedSlot(null)}
+                  />
+                </div>
+                <div className="modal-body">
+                  <p>
+                    <strong>Time:</strong><br/>
+                    {format(parseISO(selectedSlot.startTime), 'PPpp')} →{' '}
+                    {format(parseISO(selectedSlot.endTime), 'p')}
+                  </p>
+                  <fieldset className="mb-3">
+                    <legend>Type</legend>
+                    <div className="form-check">
+                      <input
+                        id="type-new"
+                        name="type"
+                        type="radio"
+                        className="form-check-input"
+                        value="new"
+                        onChange={e => setAppointmentType(e.target.value)}
+                      />
+                      <label htmlFor="type-new" className="form-check-label">
+                        New Problem
+                      </label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        id="type-follow"
+                        name="type"
+                        type="radio"
+                        className="form-check-input"
+                        value="follow-up"
+                        onChange={e => setAppointmentType(e.target.value)}
+                      />
+                      <label htmlFor="type-follow" className="form-check-label">
+                        Follow‑Up
+                      </label>
+                    </div>
+                  </fieldset>
+                  <textarea
+                    className="form-control mb-3"
+                    rows={3}
+                    placeholder="Optional note…"
+                    value={note}
+                    onChange={e => setNote(e.target.value)}
+                  />
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setSelectedSlot(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={bookSlot}
+                    disabled={!appointmentType || loading}
+                  >
+                    {loading ? 'Booking…' : 'Confirm'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Light-red styles */}
       <style jsx global>{`
