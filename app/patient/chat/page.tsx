@@ -1,98 +1,142 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
+import remarkGfm from 'remark-gfm'
+import { parseISO, format } from 'date-fns'
+
+interface Slot {
+  id: string
+  startTime: string
+  endTime: string
+  doctor: {
+    firstName: string
+    lastName: string
+  }
+}
 
 export default function PatientChat() {
-  const [messages, setMessages] = useState([{ role: 'assistant', content: '👋 Hello! I can help you find doctors or check slot availability.' }])
-  const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([])
   const [loading, setLoading] = useState(false)
-  const [formMode, setFormMode] = useState<null | string>(null)
+  const [formMode, setFormMode] = useState<{ doctor?: string; message: string } | null>(null)
+  const [slots, setSlots] = useState<Slot[]>([])
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null)
   const [fromDate, setFromDate] = useState<Date | null>(null)
   const [toDate, setToDate] = useState<Date | null>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const [appointmentType, setAppointmentType] = useState('')
+  const [note, setNote] = useState('')
 
-  const scrollToBottom = () => setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages, formMode])
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!input.trim()) return
-
-    const newMsg = { role: 'user', content: input }
-    const updatedMessages = [...messages, newMsg]
-    setMessages(updatedMessages)
-    setInput('')
+  async function fetchReply(payload: any) {
     setLoading(true)
-
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: updatedMessages }),
+      body: JSON.stringify(payload),
     })
 
     const data = await res.json()
 
     try {
       const parsed = JSON.parse(data.reply)
+
       if (parsed.action === 'RenderDateRangeForm') {
-        setFormMode(parsed.message)
-        setMessages(prev => [...prev, { role: 'assistant', content: parsed.message }])
-      } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: parsed.response || data.reply }])
+        setFormMode({ doctor: parsed.doctor, message: parsed.message })
+        return
       }
+
+      if (parsed.action === 'RenderSlotsWithBookingUI') {
+        setSlots(parsed.slots)
+        return
+      }
+
+      setMessages((prev) => [...prev, { role: 'assistant', content: parsed.response || data.reply }])
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }])
     } finally {
       setLoading(false)
     }
   }
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const input = (e.currentTarget as any).elements.message.value.trim()
+    if (!input) return
+
+    const newMsg = { role: 'user', content: input }
+    const updated = [...messages, newMsg]
+    setMessages(updated)
+    fetchReply({ messages: updated })
+    ;(e.currentTarget as any).reset()
+  }
+
   async function submitDateRange() {
     if (!fromDate || !toDate) return
-    setLoading(true)
-
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        formData: {
-          from: fromDate.toISOString(),
-          to: toDate.toISOString(),
-        },
-        messages: [],
-      }),
+    fetchReply({
+      formData: {
+        doctor: formMode?.doctor,
+        from: fromDate.toISOString(),
+        to: toDate.toISOString(),
+      },
+      messages,
     })
 
-    const data = await res.json()
-    setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
     setFormMode(null)
     setFromDate(null)
     setToDate(null)
-    setLoading(false)
   }
 
-  return (
-    <div className="container-fluid px-4 py-4" style={{ height: '93vh', display: 'flex', flexDirection: 'column' }}>
-      <h2 className="mb-3 text-center">💬 Chat with Assistant</h2>
+  async function bookSlot() {
+    if (!selectedSlot || !appointmentType) return
 
-      <div className="border rounded bg-light p-3 mb-3" style={{ flex: 1, overflowY: 'auto' }}>
+    const res = await fetch('/api/appointments/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slotId: selectedSlot.id,
+        type: appointmentType,
+        note,
+      }),
+    })
+
+    if (res.ok) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: `✅ Appointment confirmed for ${format(parseISO(selectedSlot.startTime), 'PPpp')}` },
+      ])
+      setSlots([])
+      setSelectedSlot(null)
+      setAppointmentType('')
+      setNote('')
+    } else {
+      alert('❌ Booking failed.')
+    }
+  }
+
+  const groupedSlots: Record<string, Slot[]> = {}
+  slots.forEach((slot) => {
+    const dateKey = format(parseISO(slot.startTime), 'yyyy-MM-dd')
+    if (!groupedSlots[dateKey]) groupedSlots[dateKey] = []
+    groupedSlots[dateKey].push(slot)
+  })
+
+  return (
+    <div className="container-fluid p-4" style={{ height: '95vh', display: 'flex', flexDirection: 'column' }}>
+      <h2 className="text-center mb-3">💬 Chat with Assistant</h2>
+
+      <div className="border bg-light rounded p-3 mb-3" style={{ flex: 1, overflowY: 'auto' }}>
         {messages.map((msg, i) => (
           <div key={i} className={`mb-3 ${msg.role === 'user' ? 'text-end' : 'text-start'}`}>
             <div className={`d-inline-block px-3 py-2 rounded ${msg.role === 'user' ? 'bg-primary text-white' : 'bg-white border'}`}>
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
             </div>
           </div>
         ))}
 
         {formMode && (
           <div className="bg-white p-3 border rounded mb-3">
-            <p className="mb-2">{formMode}</p>
+            <p className="mb-2">{formMode.message}</p>
             <div className="d-flex flex-column flex-md-row gap-3 align-items-center">
               <DatePicker
                 selected={fromDate}
@@ -112,32 +156,100 @@ export default function PatientChat() {
                 placeholderText="End Date"
                 className="form-control"
               />
-              <button
-                className="btn btn-success"
-                onClick={submitDateRange}
-                disabled={loading || !fromDate || !toDate}
-              >
+              <button className="btn btn-success" onClick={submitDateRange} disabled={!fromDate || !toDate || loading}>
                 {loading ? 'Loading...' : 'Show Slots'}
               </button>
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
+
+        {slots.length > 0 && (
+          <>
+            <hr />
+            <h5 className="mb-3">📅 Available Slots</h5>
+            {Object.entries(groupedSlots).map(([date, list]) => (
+              <div key={date} className="mb-4">
+                <h6>{format(parseISO(list[0].startTime), 'EEEE, MMMM d')}</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  {list.map((slot) => (
+                    <button
+                      key={slot.id}
+                      className="btn btn-outline-success"
+                      onClick={() => setSelectedSlot(slot)}
+                    >
+                      {format(parseISO(slot.startTime), 'HH:mm')} → {format(parseISO(slot.endTime), 'HH:mm')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="d-flex gap-2">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Ask anything..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={loading}
-        />
+        <input type="text" name="message" className="form-control" placeholder="Ask something..." disabled={loading} />
         <button className="btn btn-primary" type="submit" disabled={loading}>
           {loading ? '...' : 'Send'}
         </button>
       </form>
+
+      {/* Booking modal */}
+      {selectedSlot && (
+        <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: '#00000080' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Confirm Appointment</h5>
+                <button type="button" className="btn-close" onClick={() => setSelectedSlot(null)} />
+              </div>
+              <div className="modal-body">
+                <p>
+                  <strong>Time:</strong>{' '}
+                  {format(parseISO(selectedSlot.startTime), 'PPPP p')} - {format(parseISO(selectedSlot.endTime), 'p')}
+                </p>
+                <div className="mb-3">
+                  <label className="form-label">Appointment Type</label>
+                  <div className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="radio"
+                      name="type"
+                      value="new"
+                      onChange={(e) => setAppointmentType(e.target.value)}
+                      id="new"
+                    />
+                    <label className="form-check-label" htmlFor="new">New Problem</label>
+                  </div>
+                  <div className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="radio"
+                      name="type"
+                      value="follow-up"
+                      onChange={(e) => setAppointmentType(e.target.value)}
+                      id="follow-up"
+                    />
+                    <label className="form-check-label" htmlFor="follow-up">Follow-Up</label>
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Message to Doctor (optional)</label>
+                  <textarea className="form-control" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setSelectedSlot(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={bookSlot}>
+                  Confirm Booking
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
