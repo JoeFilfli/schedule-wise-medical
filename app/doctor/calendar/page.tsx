@@ -184,6 +184,28 @@ export default function CalendarPage() {
         </div>
       </PageHeader>
       
+      {/* Status Legend */}
+      <div className="mb-3">
+        <h5>Status Legend</h5>
+        <div className="d-flex gap-4 flex-wrap">
+          <div className="d-flex align-items-center gap-1">
+            <span className="badge bg-success text-white" style={{width: '1rem', height: '1rem'}}></span>
+            <small className="text-success">Scheduled</small>
+          </div>
+          <div className="d-flex align-items-center gap-1">
+            <span className="badge bg-secondary text-white" style={{width: '1rem', height: '1rem'}}></span>
+            <small className="text-secondary">Completed</small>
+          </div>
+          <div className="d-flex align-items-center gap-1">
+            <span className="badge bg-warning text-dark" style={{width: '1rem', height: '1rem'}}></span>
+            <small className="text-warning">No-Show</small>
+          </div>
+          <div className="d-flex align-items-center gap-1">
+            <span className="badge bg-danger text-white" style={{width: '1rem', height: '1rem'}}></span>
+            <small className="text-danger">Urgent</small>
+          </div>
+        </div>
+      </div>
       <div className="calendar-scrollable-area">
         {/* Calendar Grid */}
         <div className="table-responsive border">
@@ -231,9 +253,6 @@ export default function CalendarPage() {
                         } else if (st === 'NO_SHOW') {
                           bg = 'bg-warning'
                           txt = 'text-dark'
-                        } else if (st === 'CANCELLED') {
-                          bg = 'bg-danger'
-                          txt = 'text-white'
                         }
                         return (
                           <div

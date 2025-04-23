@@ -205,7 +205,6 @@ export default function DoctorSlotsPage() {
           <div
             className="modal fade show d-block"
             tabIndex={-1}
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             role="dialog"
           >
             <div className="modal-dialog modal-dialog-centered">

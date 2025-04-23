@@ -92,11 +92,7 @@ export default function DoctorAppointmentsPage() {
 
         {/* Modal */}
         {selected && (
-          <div
-            className="modal fade show d-block"
-            style={{ backgroundColor: '#00000080' }}
-            tabIndex={-1}
-          >
+          <div className="modal fade show d-block" tabIndex={-1}>
             <div className="modal-dialog modal-lg">
               <div className="modal-content">
                 <div className="modal-header">
