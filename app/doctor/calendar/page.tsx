@@ -25,7 +25,7 @@ interface Slot {
         type:      string | null
         notes:     string | null
         patient:   { firstName: string; lastName: string }
-        price?:    number      // <— NOTE: your API must now return this
+        price?:    number    
       }
     | null
 }
@@ -218,10 +218,23 @@ export default function CalendarPage() {
                       {getSlotsForHour(day,hour).map(slot=>{
                         const st = slot.appointment?.status
                         let bg='bg-info-subtle', txt=''
-                        if (st==='SCHEDULED'){ bg='bg-success'; txt='text-white' }
-                        if (st==='COMPLETED'){ bg='bg-secondary'; txt='text-white' }
-                        if (st==='NO_SHOW')  { bg='bg-warning';  txt='text-dark'  }
-                        if (st==='CANCELLED'){ bg='bg-danger';   txt='text-white' }
+                        // Urgent appointments in red
+                        if (slot.appointment?.type === 'urgent') {
+                          bg = 'bg-danger'
+                          txt = 'text-white'
+                        } else if (st === 'SCHEDULED') {
+                          bg = 'bg-success'
+                          txt = 'text-white'
+                        } else if (st === 'COMPLETED') {
+                          bg = 'bg-secondary'
+                          txt = 'text-white'
+                        } else if (st === 'NO_SHOW') {
+                          bg = 'bg-warning'
+                          txt = 'text-dark'
+                        } else if (st === 'CANCELLED') {
+                          bg = 'bg-danger'
+                          txt = 'text-white'
+                        }
                         return (
                           <div
                             key={slot.id}

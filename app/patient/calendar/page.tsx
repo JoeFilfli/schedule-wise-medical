@@ -25,29 +25,32 @@ export default function CalendarPage() {
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const response = await fetch('/api/appointments/me');
-        if (!response.ok) throw new Error('Failed to fetch appointments');
-        const appointmentsData = await response.json();
+        // Fetch all patient appointments
+        const res = await fetch('/api/appointments/me');
+        if (!res.ok) throw new Error('Failed to fetch appointments');
+        const data: any[] = await res.json();
 
-        const formattedEvents = appointmentsData.map((appointment: any) => ({
-          id: appointment.id,
-          title: 'Medical Appointment',
-          start: appointment.slot.startTime,
-          end: appointment.slot.endTime,
-          backgroundColor: '#3b82f6',
-          borderColor: '#2563eb',
-          textColor: '#ffffff',
-          display: 'block',
-          extendedProps: {
-            doctorName: `Dr. ${appointment.slot.doctor.lastName}`,
-            specialty: appointment.slot.doctor.specialty || ''
-          }
-        }));
-        
+        // Only include appointments with a valid slot
+        const formattedEvents: EventInput[] = data
+          .filter(app => app.slot !== null)
+          .map(app => ({
+            id: app.id,
+            title: 'Medical Appointment',
+            start: app.slot.startTime,
+            end: app.slot.endTime,
+            backgroundColor: '#3b82f6',
+            borderColor: '#2563eb',
+            textColor: '#ffffff',
+            display: 'block',
+            extendedProps: {
+              doctorName: `Dr. ${app.slot.doctor.firstName} ${app.slot.doctor.lastName}`
+            }
+          }));
+
         setEvents(formattedEvents);
         setLoading(false);
-      } catch (error) {
-        console.error('Error fetching appointments:', error);
+      } catch (err) {
+        console.error('Error fetching appointments:', err);
         setError('Failed to load calendar. Please try again later.');
         setLoading(false);
       }
@@ -137,11 +140,6 @@ export default function CalendarPage() {
                       </div>
                       <div className="fc-event-doctor small">
                         {arg.event.extendedProps.doctorName}
-                        {arg.event.extendedProps.specialty && (
-                          <span className="opacity-75">
-                            {' • '}{arg.event.extendedProps.specialty}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>

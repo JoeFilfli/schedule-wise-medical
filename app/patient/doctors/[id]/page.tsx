@@ -183,9 +183,21 @@ export default function DoctorSlotsPage() {
           slotMaxTime="19:00:00"
           allDaySlot={false}
           navLinks
-          events={events}
+          contentHeight={800}
+          aspectRatio={1.5}
+          slotLabelFormat={{
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          }}
+          events={events.map(event => ({
+            ...event,
+            classNames: [
+              ...(event.classNames || []),
+              'enhanced-slot'
+            ]
+          }))}
           eventClick={handleEventClick}
-          height="auto"
         />
 
         {/* Booking Modal */}
@@ -227,6 +239,7 @@ export default function DoctorSlotsPage() {
                         New Problem
                       </label>
                     </div>
+                    
                     <div className="form-check">
                       <input
                         id="type-follow"
@@ -238,6 +251,19 @@ export default function DoctorSlotsPage() {
                       />
                       <label htmlFor="type-follow" className="form-check-label">
                         Follow‑Up
+                      </label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        id="type-urgent"
+                        name="type"
+                        type="radio"
+                        className="form-check-input"
+                        value="urgent"
+                        onChange={e => setAppointmentType(e.target.value)}
+                      />
+                      <label htmlFor="type-urgent" className="form-check-label">
+                        Urgent
                       </label>
                     </div>
                   </fieldset>
@@ -289,6 +315,48 @@ export default function DoctorSlotsPage() {
       .fc .fc-timegrid-col .fc-timegrid-col-axis:has(+ .fc-timegrid-col[data-date].fc-col-today),
       .fc .fc-timegrid-col-frame .fc-daygrid-day.fc-col-today {
         background-color: #e0f7fa !important;
+      }
+
+      .fc-timegrid-slots td {
+        height: 60px !important; /* Taller rows */
+        min-width: 150px !important; /* Wider time slots */
+      }
+
+      .fc-timegrid-axis {
+        width: 80px !important; /* Wider time labels column */
+      }
+
+      .fc-timegrid-col {
+        min-width: 200px !important; /* Wider day columns */
+      }
+
+      .fc-event {
+        padding: 12px !important;
+        margin: 4px 8px !important;
+        font-size: 15px !important;
+        min-height: 54px; /* Taller events */
+      }
+
+      .fc-event:hover {
+        transform: scale(1.02);
+        z-index: 1000 !important;
+      }
+
+      /* Calendar container sizing */
+      .calendar-scrollable-area {
+        min-width: 1000px;
+        overflow-x: auto;
+      }
+
+      .fc-timegrid-cols {
+        min-width: 1200px !important;
+      }
+
+      .enhanced-slot {
+        padding: 15px !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
       }
     `}</style>
 

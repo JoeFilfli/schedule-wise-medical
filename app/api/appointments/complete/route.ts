@@ -30,9 +30,9 @@ export async function POST(req: Request) {
     const updated = await prisma.appointment.update({
       where: { id },
       data: {
-        status: "COMPLETED",
+        status: status,
         review,
-        priceDue: parsedPrice,  
+        priceDue: parsedPrice,
       },
     })
     console.log('✅ Appointment updated:', updated)

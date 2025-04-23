@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { format, parseISO, isAfter } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import PageHeader from '@/components/layout/PageHeader'
@@ -94,20 +94,44 @@ export default function AppointmentsPage() {
           : a.doctorName || 'Doctor'
 
         return (
-          <li
-            key={a.id}
-            className="list-group-item list-group-item-action clickable-item"
-            role="button"
-            tabIndex={0}
-            onClick={() => setSelected(a)}
-            onKeyDown={e => { if (e.key === 'Enter') setSelected(a) }}
-          >
-            <div className="d-flex justify-content-between">
-              <div>
+          <li key={a.id} className="list-group-item">
+            <div className="d-flex justify-content-between align-items-center">
+              <div
+                className="clickable-item"
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelected(a)}
+                onKeyDown={e => { if (e.key === 'Enter') setSelected(a) }}
+                aria-label={`View details for appointment with Dr. ${doctorName} on ${format(a.startDate, 'PPpp')}`}
+              >
                 <strong>Dr. {doctorName}</strong><br/>
                 {format(a.startDate, 'PPpp')} → {format(end, 'HH:mm')}<br/>
                 <small>Status: {a.status}</small>
               </div>
+              {a.status === 'SCHEDULED' && a.slot && (
+                <div className="btn-group">
+                  <button
+                    type="button"
+                    className="btn btn-lg btn-outline-primary"
+                    onClick={() =>
+                      router.push(
+                        `/patient/doctors/${a.slot!.doctor.id}?reschedule=${a.id}`
+                      )
+                    }
+                    aria-label={`Reschedule appointment with Dr. ${doctorName} on ${format(a.startDate, 'PPpp')}`}
+                  >
+                    Reschedule
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-lg btn-outline-danger"
+                    onClick={() => cancelAppointment(a.id)}
+                    aria-label={`Cancel appointment with Dr. ${doctorName} on ${format(a.startDate, 'PPpp')}`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </li>
         )
@@ -140,89 +164,50 @@ export default function AppointmentsPage() {
 
         {/* Details Modal */}
         {selected && (
-          <div
-            className="modal fade show d-block"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="appt-detail-title"
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-            onClick={e => { if (e.currentTarget === e.target) setSelected(null) }}
-          >
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 id="appt-detail-title" className="modal-title">
-                    Appointment Details
-                  </h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    aria-label="Close details"
-                    onClick={() => setSelected(null)}
-                  />
-                </div>
-                <div className="modal-body">
-                  <p>
-                    <strong>Doctor:</strong>{' '}
-                    {selected.slot
-                      ? `${selected.slot.doctor.firstName} ${selected.slot.doctor.lastName}`
-                      : selected.doctorName}
-                  </p>
-                  <p>
-                    <strong>When:</strong><br/>
-                    {format(selected.startDate, 'PPPP p')} →{' '}
-                    {selected.slot?.endTime
-                      ? format(parseISO(selected.slot.endTime), 'p')
-                      : format(selected.startDate, 'p')}
-                  </p>
-                  {selected.type && (
-                    <p>
-                      <strong>Type:</strong>{' '}
-                      {selected.type === 'new' ? 'New Problem' : 'Follow‑Up'}
-                    </p>
-                  )}
-                  {selected.notes && (
-                    <p><strong>Note:</strong> {selected.notes}</p>
-                  )}
-                  {selected.review && (
-                    <p><strong>Review:</strong> {selected.review}</p>
-                  )}
-                  <p><strong>Status:</strong> {selected.status}</p>
-                  {selected.reason && (
-                    <p><strong>Reason:</strong> {selected.reason}</p>
-                  )}
-                </div>
-                <div className="modal-footer">
-                  {selected.status === 'SCHEDULED' && selected.slot && (
-                    <button
-                      className="btn btn-primary"
-                      onClick={() =>
-                        router.push(
-                          `/patient/doctors/${selected.slot!.doctor.id}?reschedule=${selected.id}`
-                        )
-                      }
-                    >
-                      Reschedule
-                    </button>
-                  )}
-                  {selected.status === 'SCHEDULED' && (
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => cancelAppointment(selected.id)}
-                    >
-                      Cancel
-                    </button>
-                  )}
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setSelected(null)}
-                  >
-                    Close
-                  </button>
+          <>
+            <div className="modal-backdrop fade show"></div>
+            <div
+              className="modal fade show"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="appt-detail-title"
+              tabIndex={-1}
+            >
+              <div className="modal-dialog modal-dialog-centered" role="document">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 id="appt-detail-title" className="modal-title">
+                      Appointment Details
+                    </h5>
+                    <button type="button" className="btn-close" aria-label="Close details" onClick={() => setSelected(null)} />
+                  </div>
+                  <div className="modal-body">
+                    <p><strong>Doctor:</strong> {selected.slot ? `${selected.slot.doctor.firstName} ${selected.slot.doctor.lastName}` : selected.doctorName}</p>
+                    <p><strong>When:</strong><br />{format(selected.startDate, 'PPPP p')} → {selected.slot?.endTime ? format(parseISO(selected.slot.endTime), 'p') : format(selected.startDate, 'p')}</p>
+                    {selected.type && (
+                      <p>
+                        <strong>Type:</strong>{' '}
+                        {selected.type === 'new'
+                          ? 'New Problem'
+                          : selected.type === 'follow-up'
+                          ? 'Follow‑Up'
+                          : selected.type === 'urgent'
+                          ? 'Urgent'
+                          : selected.type}
+                      </p>
+                    )}
+                    {selected.notes && <p><strong>Note:</strong> {selected.notes}</p>}
+                    {selected.review && <p><strong>Review:</strong> {selected.review}</p>}
+                    <p><strong>Status:</strong> {selected.status}</p>
+                    {selected.reason && <p><strong>Reason:</strong> {selected.reason}</p>}
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn btn-secondary" onClick={() => setSelected(null)}>Close</button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* Clickable styles */}
@@ -237,6 +222,31 @@ export default function AppointmentsPage() {
           }
           .clickable-item:active {
             background-color: #d0e7ff;
+          }
+          /* Fullscreen modal overlay */
+          .modal.fade.show {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            z-index: 1055 !important;
+          }
+          /* Fullscreen backdrop */
+          .modal-backdrop.fade.show {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 1050 !important;
+          }
+          /* Center the modal dialog vertically */
+          .modal-dialog-centered {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-height: 100% !important;
           }
         `}</style>
       </div>

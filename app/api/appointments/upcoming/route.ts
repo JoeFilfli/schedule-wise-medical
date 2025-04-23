@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       include: {
         doctor: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
             doctorProfile: {

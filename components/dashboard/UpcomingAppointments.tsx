@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import Card from '@/components/ui/Card';
+import { useRouter } from 'next/navigation';
 
 interface Doctor {
+  id: string;
   firstName: string;
   lastName: string;
   doctorProfile: {
@@ -22,33 +24,48 @@ interface Appointment {
 }
 
 export default function UpcomingAppointments() {
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  const fetchAppointments = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/appointments/upcoming');
+      if (!response.ok) throw new Error('Failed to fetch appointments');
+      const data = await response.json();
+      setAppointments(data);
+    } catch (err) {
+      console.error('Error fetching appointments:', err);
+      setError('Failed to load appointments');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
-    
-    const fetchAppointments = async () => {
-      try {
-        const response = await fetch('/api/appointments/upcoming');
-        if (!response.ok) {
-          throw new Error('Failed to fetch appointments');
-        }
-        const data = await response.json();
-        setAppointments(data);
-      } catch (error) {
-        console.error('Error fetching appointments:', error);
-        setError('Failed to load appointments');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchAppointments();
   }, []);
+
+  const handleCancel = async (id: string) => {
+    try {
+      const res = await fetch('/api/appointments/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentId: id })
+      });
+      if (!res.ok) throw new Error('Cancel failed');
+      await fetchAppointments();
+      setCurrentIndex(0);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to cancel appointment');
+    }
+  };
 
   const handlePrevious = () => {
     setCurrentIndex(prev => (prev > 0 ? prev - 1 : appointments.length - 1));
@@ -121,7 +138,6 @@ export default function UpcomingAppointments() {
     >
       <div className="d-flex gap-3 overflow-hidden">
         {appointments.map((appointment, index) => {
-          // Try to get the appointment date from various possible fields
           const dateString = appointment.scheduledStart;
           const date = new Date(dateString);
           const dayName = format(date, 'EEE');
@@ -184,6 +200,28 @@ export default function UpcomingAppointments() {
                     {format(new Date(appointment.scheduledStart), 'h:mm a')}
                   </div>
                 </div>
+
+                {index === currentIndex && (
+                  <div className="d-flex gap-2 mt-2">
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary"
+                      onClick={() => router.push(`/patient/doctors/${appointment.doctor.id}?reschedule=${appointment.id}`)}
+                      aria-label={`Reschedule appointment on ${format(date, 'PPpp')}`}
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger"
+                      onClick={() => handleCancel(appointment.id)}
+                      aria-label={`Cancel appointment on ${format(date, 'PPpp')}`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
               </div>
             </div>
           );
