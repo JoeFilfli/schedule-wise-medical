@@ -30,11 +30,13 @@ npm install
 ```
 
 ### 3. Environment Variables
-Create a .env file:
+Create a `.env` file at the project root with the following (replace values with your own credentials):
 
-```
-DATABASE_URL="postgresql://youruser:yourpass@localhost:5432/hospital_db"
-NEXTAUTH_SECRET="your-long-secret-key"
+```bash
+DATABASE_URL="postgresql://postgres:Hello10$@localhost:5432/hospital_db"
+NEXTAUTH_SECRET="my_secret_here"
+GEMINI_API_KEY=AIzaSyCdIgv_k9otKoJFRkq_ioOGsyNJJhqemdc
+NEXTAUTH_URL=http://localhost:3000
 ```
 
 ### 4. Prisma Setup
@@ -53,3 +55,24 @@ npm run dev
 
 ```
 Visit http://localhost:3000
+
+### 6. Running with Docker
+
+Ensure you have Docker and Docker Compose installed.
+
+Build and start the services:
+```bash
+docker-compose up --build
+```
+
+Access the app at http://localhost:3000.
+
+To run in detached mode:
+```bash
+docker-compose up -d --build
+```
+
+Stop and remove containers:
+```bash
+docker-compose down
+```
